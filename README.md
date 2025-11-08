@@ -68,7 +68,7 @@ That's it! No need to install .NET, Node.js, PostgreSQL, or any other dependency
 
 ```bash- **Architecture**: Layered Architecture (Katmanlı Mimari)
 
-git clone <your-repo-url>- **Patterns**: 
+git clone https://github.com/hpolatt/crm-app.git- **Patterns**: 
 
 cd CrmApp  - Generic Repository Pattern
 
