@@ -1,202 +1,128 @@
-# CRM Application# CRM Application
+# CRM Application
 
+I built this CRM as a practical, containerized starter for small-to-medium projects. It combines a .NET 8 API backend with a React + TypeScript frontend and includes PostgreSQL, Redis, Elasticsearch and Kibana in the development stack so you can run everything locally with Docker.
 
+## What this repo includes
 
-Modern, enterprise-grade CRM (Customer Relationship Management) system built with **.NET 8**, **React**, **TypeScript**, and **PostgreSQL**.Kapsamlı bir CRM (Customer Relationship Management) uygulaması. Backend .NET 8, Frontend React + TypeScript ile geliştirilmiştir.
+- Core modules: Companies, Contacts, Leads, Opportunities, Notes
+- Role-based access control (SuperAdmin, Admin, User)
+- JWT authentication with refresh tokens
+- Request/response logging to Elasticsearch (viewable in Kibana)
+- Redis caching for common queries
+- Docker Compose setup for local development and testing
 
+## Tech stack
 
+- Backend: .NET 8, Entity Framework Core, MediatR, Serilog
+- Frontend: React 18, TypeScript, Vite, Material-UI
+- Database: PostgreSQL
+- Cache: Redis
+- Logging: Elasticsearch + Kibana
+- Containerization: Docker & Docker Compose
 
-## 🚀 Features## Proje Yapısı
+---
 
+## Quick start (development)
 
+These are the steps I use locally. It should work on macOS, Linux, and Windows with Docker Desktop installed.
 
-### Core Modules```
+Prerequisites:
 
-- **👥 Companies** - Complete company management with industry, website, contact infoCrmApp/
+- Docker Desktop (v20.10+)
+- Docker Compose (v2+)
 
-- **📇 Contacts** - Contact management with company association├── backend/              # .NET 8 Backend API
+1. Copy the example environment file and edit it for your machine:
 
-- **🎯 Leads** - Lead tracking with status, source, and score management│   ├── CrmApp.API/      # Web API Layer
-
-- **💼 Opportunities** - Sales pipeline with stages, values, and probability tracking│   ├── CrmApp.Application/  # Application Layer (CQRS, MediatR)
-
-- **📝 Notes** - Contextual notes for companies, contacts, leads, and opportunities│   ├── CrmApp.Core/     # Core Layer (Interfaces, Repository Pattern)
-
-- **⚙️ System Settings** - Configurable application settings│   ├── CrmApp.Domain/   # Domain Layer (Entities)
-
-- **👤 User Management** - Role-based access control (SuperAdmin, Admin, User)│   └── CrmApp.Infrastructure/  # Infrastructure Layer (EF Core, Redis)
-
-├── frontend/            # React + TypeScript Frontend
-
-### Technical Features│   ├── src/
-
-- **🔐 JWT Authentication** - Secure token-based authentication│   │   ├── components/  # Reusable UI components
-
-- **📊 Activity Logging** - Elasticsearch-powered request/response logging│   │   ├── pages/       # Page components
-
-- **🔍 Kibana Dashboard** - Real-time log visualization and monitoring│   │   ├── store/       # Redux Toolkit store
-
-- **⚡ Redis Caching** - High-performance data caching│   │   ├── services/    # API services
-
-- **🐳 Docker** - Fully containerized deployment│   │   └── types/       # TypeScript types
-
-- **📱 Responsive UI** - Material-UI based modern interface├── database/            # PostgreSQL initialization scripts
-
-- **🔄 Real-time Updates** - Instant data synchronization│   ├── 01_init_database.sql
-
-│   ├── 02_create_tables.sql
-
-## 📋 Prerequisites│   ├── 03_create_indexes.sql
-
-│   ├── 04_create_triggers.sql
-
-- **Docker Desktop** (v20.10+)│   ├── 05_seed_data.sql
-
-- **Docker Compose** (v2.0+)│   └── Dockerfile
-
-└── docker-compose.yml   # Docker Compose configuration
-
-That's it! No need to install .NET, Node.js, PostgreSQL, or any other dependency.```
-
-
-
-## ⚡ Quick Start## Teknolojiler
-
-
-
-### 1. Clone the repository### Backend (.NET 8)
-
-```bash- **Architecture**: Layered Architecture (Katmanlı Mimari)
-
-git clone https://github.com/hpolatt/crm-app.git- **Patterns**: 
-
-cd CrmApp  - Generic Repository Pattern
-
-```  - Unit of Work Pattern
-
-  - CQRS (MediatR)
-
-### 2. Configure environment variables- **Database**: PostgreSQL + Entity Framework Core
-
-```bash- **Cache**: Redis (StackExchange.Redis)
-
-# Copy example environment file- **Authentication**: JWT Bearer Authentication
-
-cp .env.example .env- **Validation**: FluentValidation
-
-- **Logging**: Serilog
-
-# Edit .env file and update passwords/secrets- **Mapping**: AutoMapper
-
-nano .env  # or use your preferred editor- **API Documentation**: Swagger/OpenAPI
-
+```bash
+cp .env.example .env
+# edit .env and set local passwords/ports. Do NOT commit .env
 ```
 
-### Frontend (React + TypeScript)
+2. Start everything with Docker Compose (this will also use `docker-compose.override.yml` if present for development overrides):
 
-**Important:** Change these values in `.env`:- **Framework**: React 18 with TypeScript
-
-- `POSTGRES_PASSWORD`- **Build Tool**: Vite
-
-- `REDIS_PASSWORD`- **UI Library**: Material-UI (MUI)
-
-- `ELASTIC_PASSWORD`- **State Management**: Redux Toolkit
-
-- `JWT_SECRET` (must be at least 32 characters)- **Data Fetching**: React Query (TanStack Query)
-
-- **Form Management**: React Hook Form + Yup
-
-### 3. Start all services- **Routing**: React Router v6
-
-```bash- **HTTP Client**: Axios with interceptors
-
+```bash
 docker-compose up -d
+```
 
-```### Database
+3. Open the services:
 
-- **PostgreSQL 16**: Relational database
+- Frontend: http://localhost (or the port defined in `docker-compose.yml`)
+- Backend API: http://localhost:5001 (Swagger: `/swagger`)
+- Kibana: http://localhost:5601
 
-This will start:- **Schemas**: 
+Tips:
 
-- PostgreSQL (Port: 5433)  - `auth` - Authentication & Authorization
+- To tail logs for a specific service: `docker-compose logs -f <service>`
+- `docker-compose.override.yml` is ignored by git and designed for local dev mounts (hot reload)
 
-- Redis (Port: 6379)  - `crm` - CRM entities (Companies, Contacts, Leads, etc.)
+---
 
-- Elasticsearch (Port: 9200)  - `audit` - Audit logging
+## Run locally (without Docker)
 
-- Kibana (Port: 5601)- **Features**: 
+If you prefer running services directly during development:
 
-- Backend API (Port: 5001)  - Triggers for auto-updates
+Backend
 
-- Frontend (Port: 80)  - Indexes for performance
+```bash
+cd backend
+dotnet restore
+dotnet build
+dotnet run --project CrmApp.API
+```
 
-  - Full-text search support
+Frontend
 
-### 4. Access the application
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### DevOps
+---
 
-- **Frontend**: http://localhost- **Containerization**: Docker & Docker Compose
+## Environment & secrets
 
-- **Backend API**: http://localhost:5001- **Web Server**: Nginx (for frontend)
+I keep placeholders in `appsettings.json` and provide `.env.example` as a template. For local development use `appsettings.Development.json` or environment variables. In production, I expect secrets to come from the environment or a secrets manager. If you use Docker Compose you can provide values via an `.env` file or CI/CD secrets.
 
-- **Swagger Documentation**: http://localhost:5001/swagger
+Note: ASP.NET Core supports hierarchical env var names, e.g. `ConnectionStrings__DefaultConnection`.
 
-- **Kibana**: http://localhost:5601## Özellikler
+---
 
+## Tests
 
+If there are tests in the repo, run them like this:
 
-### 5. Login### Backend Features
+Backend tests
 
-- ✅ JWT Authentication & Authorization
+```bash
+cd backend
+dotnet test
+```
 
-Default credentials:- ✅ Role-based Access Control (RBAC)
+Frontend tests
 
-- **Email**: `admin@crm.com`- ✅ Generic Repository Pattern
+```bash
+cd frontend
+npm run test
+```
 
-- **Password**: `Admin@123`- ✅ Unit of Work Pattern
+---
 
-- ✅ CQRS with MediatR
+## Contributing
 
-## 📚 Documentation- ✅ Global Exception Handling
+If you want to contribute, please open an issue first to discuss larger changes. Keep PRs focused and include a clear description of the change and any setup steps.
 
-- ✅ Redis Caching
+See `CONTRIBUTING.md` for more details.
 
-- [Setup Guide](SETUP.md) - Detailed installation and configuration- ✅ Async/Await operations
+---
 
-- [Architecture](docs/ARCHITECTURE.md) - System architecture and design- ✅ Fluent Validation
+## License
 
-- [API Documentation](docs/API.md) - Backend API reference- ✅ AutoMapper
+This project is MIT licensed — see the `LICENSE` file.
 
-- [Database Schema](docs/DATABASE.md) - Database structure and relationships- ✅ Serilog Logging
+---
 
-- ✅ Swagger Documentation
-
-## 🛠️ Tech Stack- ✅ Soft Delete support
-
-- ✅ Audit Trail
-
-### Backend
-
-- **.NET 8** - Modern C# framework### Frontend Features
-
-- **Entity Framework Core** - ORM for PostgreSQL- ✅ JWT-based Authentication
-
-- **MediatR** - CQRS pattern implementation- ✅ Private Routes
-
-- **AutoMapper** - Object-to-object mapping- ✅ Responsive Design
-
-- **Serilog** - Structured logging- ✅ Dark/Light Theme support
-
-- **JWT** - Authentication- ✅ Form Validation
-
-- ✅ API Error Handling
-
-### Frontend- ✅ Loading States
-
-- **React 18** - UI library- ✅ Toast Notifications
-
-- **TypeScript** - Type-safe JavaScript
+If you run into problems, open an issue in this repository and I will take a look.
 
 - **Material-UI (MUI)** - Component library### CRM Modules
 
