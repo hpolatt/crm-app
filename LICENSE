@@ -1,3 +1,65 @@
+Business Source License 1.1 (BSL-1.1)
+
+Copyright (c) 2025 Hüseyin Polat
+
+Business Source License 1.1
+
+This software is licensed under the Business Source License 1.1 (BSL-1.1).
+
+You may use the software under the terms of the BSL-1.1. Under the BSL, the
+software is provided with source code available, but commercial use and
+providing the software as a hosted service are restricted for a limited time.
+
+Change Date: 2026-11-09
+Change License: MIT
+
+Summary of terms (not a substitute for the license text):
+- The source code is available in this repository.
+- For a period of one year from the Change Date defined above, commercial use
+  and offering the software as a hosted service are restricted except as
+  permitted by the BSL. After the Change Date, the software will be available
+  under the MIT license.
+
+Full license terms (BSL-1.1):
+
+BUSINESS SOURCE LICENSE 1.1
+
+Copyright (c) 2025 Huseyin Polat
+
+1. Definitions
+   "Change Date" means 2026-11-09.
+   "Licensed Work" means the Work as provided in this repository.
+   "You" means the licensee.
+
+2. License Grant
+   Subject to the terms of this License, the Licensor hereby grants You a
+   non-exclusive, non-transferable license to use, copy, and modify the
+   Licensed Work for non-commercial purposes and internal evaluation.
+
+3. Commercial Use and Hosting
+   Commercial use of the Licensed Work, and offering the Licensed Work as a
+   hosted service to third parties, is restricted until the Change Date.
+   After the Change Date, the Licensed Work will be available under the MIT
+   License as specified in the Change License above.
+
+4. Attribution
+   You must retain the copyright notice and this license in all copies or
+   substantial portions of the Licensed Work.
+
+5. Disclaimer
+   THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE
+   LICENSOR DISCLAIMS ALL WARRANTIES, WHETHER EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+
+6. Governing Law
+   Any disputes arising under this License will be governed by the law of the
+   licensor's primary place of business.
+
+7. Other
+   For the full authoritative text of BSL-1.1, see the official specification
+   and consult legal counsel if you plan to use this license in a commercial
+   context.
 MIT License
 
 Copyright (c) 2024 CRM Application

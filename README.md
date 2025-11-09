@@ -2,6 +2,8 @@
 
 I built this CRM as a practical, containerized starter for small-to-medium projects. It combines a .NET 8 API backend with a React + TypeScript frontend and includes PostgreSQL, Redis, Elasticsearch and Kibana in the development stack so you can run everything locally with Docker.
 
+License: This repository is published under the Business Source License 1.1 (BSL-1.1). Commercial use and offering this project as a hosted service are restricted until 2026-11-09, after which the code will be available under the MIT license. See `LICENSE` for details.
+
 ## What this repo includes
 
 - Core modules: Companies, Contacts, Leads, Opportunities, Notes

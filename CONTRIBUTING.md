@@ -40,166 +40,141 @@ Thank you for your interest in contributing to this CRM Application! This docume
 - Git
 - Code editor (VS Code recommended)
 
-### Setup Steps
+# Contributing
 
-1. **Clone your fork**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/CrmApp.git
-   cd CrmApp
-   ```
+Thanks for wanting to help improve this project — I appreciate it. Below I explain how I prefer contributions to be made so reviews go smoothly and the repository stays easy to maintain.
 
-2. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   ```
+## Reporting bugs
 
-3. **Start development environment**
-   ```bash
-   docker-compose up -d
-   ```
+If you find a bug, please search existing issues first. If none exist, open a new issue with:
 
-4. **Backend development** (optional, without Docker)
-   ```bash
-   cd backend
-   dotnet restore
-   dotnet run --project CrmApp.API
-   ```
+- A short, descriptive title
+- Steps to reproduce (minimal, repeatable)
+- Expected vs actual behavior
+- Environment details (OS, Docker version, any relevant logs)
+- Screenshots or curl examples when helpful
 
-5. **Frontend development** (optional, without Docker)
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+That helps me reproduce and prioritize the fix.
 
-## 📝 Coding Standards
+License note: This project is distributed under the Business Source License 1.1 (BSL-1.1). Commercial use and offering the software as a hosted service are restricted until 2026-11-09. See `LICENSE` for details.
 
-### Backend (.NET)
-- Follow C# naming conventions
-- Use async/await for asynchronous operations
-- Add XML documentation for public APIs
-- Follow SOLID principles
-- Use dependency injection
-- Write unit tests for business logic
+## Suggesting features
 
-### Frontend (React/TypeScript)
-- Use TypeScript for type safety
-- Follow React best practices
-- Use functional components with hooks
-- Keep components small and focused
-- Use Material-UI components consistently
-- Write meaningful component and variable names
+Before implementing a big feature, open an issue describing the use case and benefits. Include a short proposal for the implementation and any UI changes. I’ll give feedback and we can iterate on the design before you start coding.
 
-### Database
-- Use migrations for schema changes
-- Never modify `*_seed_data.sql` directly in production
-- Add indexes for frequently queried columns
-- Document complex queries
+## Pull requests
 
-### Git Commit Messages
-Follow conventional commits:
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `style:` Code style changes (formatting)
-- `refactor:` Code refactoring
-- `test:` Adding/updating tests
-- `chore:` Maintenance tasks
+My preferred workflow:
 
-Example:
+1. Fork the repo and create a topic branch: `git checkout -b feat/my-feature`
+2. Keep changes focused and small
+3. Add or update tests where appropriate
+4. Update documentation if behavior changes
+5. Commit with clear messages (see below)
+6. Push the branch and open a PR describing the change and any setup steps
+
+I try to review PRs promptly; expect a request for small changes sometimes.
+
+### Commit message style
+
+I follow conventional commit prefixes. Example messages:
+
 ```
 feat: add email notification for new leads
-fix: resolve null reference in company service
-docs: update API documentation for contacts endpoint
+fix: handle nulls in company service
+docs: update API docs for contacts endpoint
 ```
 
-## 🧪 Testing
+## Development setup
 
-### Backend Tests
+Quick steps to get the project running locally (I recommend Docker for a reproducible environment):
+
+1. Clone your fork and add the upstream remote
+
+```bash
+git clone https://github.com/YOUR_USERNAME/crm-app.git
+cd crm-app
+git remote add upstream https://github.com/hpolatt/crm-app.git
+```
+
+2. Copy environment template and edit local values:
+
+```bash
+cp .env.example .env
+# edit .env (do not commit .env)
+```
+
+3. Start services:
+
+```bash
+docker-compose up -d
+```
+
+Alternatively run backend/frontend locally without Docker (see `SETUP.md`).
+
+## Coding standards
+
+Backend (.NET): follow C# conventions, prefer `async/await`, use dependency injection and write unit tests for business logic.
+
+Frontend (React/TypeScript): use TypeScript, functional components and hooks, favor small focused components and clear naming.
+
+Database: use EF Core migrations for schema changes and document complex queries.
+
+## Tests
+
+Run unit tests with:
+
 ```bash
 cd backend
 dotnet test
-```
 
-### Frontend Tests
-```bash
 cd frontend
-npm test
+npm run test
 ```
 
-### Integration Tests
+Integration tests are welcome; if you add them, document how to run them in this file.
+
+## Code review
+
+- All PRs should have at least one reviewer
+- CI must pass before merging
+- Include tests for new behavior
+- Keep changes focused and easy to review
+
+## Debugging and logs
+
+To view logs:
+
 ```bash
-# Start all services first
-docker-compose up -d
-
-# Run integration tests
-# (Implementation pending)
-```
-
-## 📚 Documentation
-
-When adding new features:
-1. Update relevant documentation in `/docs`
-2. Add API documentation in Swagger comments
-3. Update README.md if needed
-4. Add inline code comments for complex logic
-
-## 🔍 Code Review Process
-
-1. All PRs require at least one approval
-2. CI/CD checks must pass
-3. Code should follow project standards
-4. Tests should be included for new features
-5. Documentation should be updated
-
-## 🐛 Debugging
-
-### View Logs
-```bash
-# All services
 docker-compose logs -f
-
-# Specific service
 docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f database
 ```
 
-### Access Database
+To access the database or Redis (if running in Docker):
+
 ```bash
 docker exec -it crm-database psql -U crmuser -d crmdb
+docker exec -it crm-redis redis-cli -a <REDIS_PASSWORD>
 ```
 
-### Access Redis
-```bash
-docker exec -it crm-redis redis-cli -a YOUR_REDIS_PASSWORD
-```
+For Elasticsearch logs, open Kibana at `http://localhost:5601` and create the `crm-logs-*` index pattern.
 
-### View Elasticsearch Logs
-- Open Kibana: http://localhost:5601
-- Navigate to Discover
-- Create index pattern: `crm-logs-*`
+## Release process
 
-## 🚀 Release Process
+When preparing a release I:
 
-1. Update version in relevant files
-2. Update CHANGELOG.md
-3. Create a release branch
-4. Tag the release
-5. Deploy to production
-6. Announce the release
+1. Update version/CHANGELOG
+2. Create a release branch and tag the release
+3. Merge and deploy
 
-## 📞 Getting Help
+If you want to help with releases, open an issue and I’ll explain the process.
 
-- **Documentation**: Check [SETUP.md](SETUP.md) and [README.md](README.md)
-- **Issues**: Search existing issues or create a new one
-- **Discussions**: Use GitHub Discussions for questions
+## Getting help
 
-## 📜 License
+If you get stuck, open an issue and include the steps you followed and any errors or logs. I’ll respond as soon as I can.
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+## License
 
----
+By contributing you agree your changes will be licensed under the MIT License (see `LICENSE`).
 
-Thank you for contributing! 🎉
+Thanks again — I appreciate your help!
