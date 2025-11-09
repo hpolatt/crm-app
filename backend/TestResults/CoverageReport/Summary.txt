@@ -1,0 +1,102 @@
+Summary
+  Generated on: 11/10/2025 - 2:54:47 AM
+  Parser: OpenCover
+  Assemblies: 3
+  Classes: 77
+  Files: 64
+  Line coverage: 78.5%
+  Covered lines: 1068
+  Uncovered lines: 292
+  Coverable lines: 1360
+  Total lines: 2278
+  Branch coverage: 83.2% (104 of 125)
+  Covered branches: 104
+  Total branches: 125
+  Method coverage: 70.2% (509 of 725)
+  Full method coverage: 69.3% (503 of 725)
+  Covered methods: 509
+  Fully covered methods: 503
+  Total methods: 725
+
+CrmApp.Core                                               63.2%
+  CrmApp.Core.Configuration.ElasticsearchSettings          100%
+  CrmApp.Core.DTOs.Activities.ActivityDto                    0%
+  CrmApp.Core.DTOs.Activities.ActivityFilterQuery          100%
+  CrmApp.Core.DTOs.Activities.CreateActivityDto            100%
+  CrmApp.Core.DTOs.Activities.UpdateActivityDto           38.4%
+  CrmApp.Core.DTOs.ActivityLogs.ActivityLogDto            63.6%
+  CrmApp.Core.DTOs.ApiResponse<T>                           20%
+  CrmApp.Core.DTOs.Auth.LoginRequest                       100%
+  CrmApp.Core.DTOs.Auth.LoginResponse                      100%
+  CrmApp.Core.DTOs.Auth.RefreshTokenRequest                100%
+  CrmApp.Core.DTOs.Auth.RegisterRequest                    100%
+  CrmApp.Core.DTOs.Auth.UserDto                            100%
+  CrmApp.Core.DTOs.Common.PagedResult<T>                   100%
+  CrmApp.Core.DTOs.Common.PaginationQuery                   80%
+  CrmApp.Core.DTOs.Companies.CompanyDto                   23.5%
+  CrmApp.Core.DTOs.Companies.CompanyFilterQuery            100%
+  CrmApp.Core.DTOs.Companies.CreateCompanyDto              100%
+  CrmApp.Core.DTOs.Companies.UpdateCompanyDto             21.4%
+  CrmApp.Core.DTOs.Contacts.ContactDto                       0%
+  CrmApp.Core.DTOs.Contacts.ContactFilterQuery             100%
+  CrmApp.Core.DTOs.Contacts.CreateContactDto               100%
+  CrmApp.Core.DTOs.Contacts.UpdateContactDto              62.5%
+  CrmApp.Core.DTOs.Dashboard.DashboardSummaryDto           100%
+  CrmApp.Core.DTOs.DealStages.CreateDealStageDto           100%
+  CrmApp.Core.DTOs.DealStages.DealStageDto                 100%
+  CrmApp.Core.DTOs.DealStages.UpdateDealStageDto           100%
+  CrmApp.Core.DTOs.Leads.CreateLeadDto                     100%
+  CrmApp.Core.DTOs.Leads.LeadDto                             0%
+  CrmApp.Core.DTOs.Leads.LeadFilterQuery                   100%
+  CrmApp.Core.DTOs.Leads.UpdateLeadDto                      25%
+  CrmApp.Core.DTOs.Logging.RequestLogDto                   100%
+  CrmApp.Core.DTOs.Notes.CreateNoteDto                     100%
+  CrmApp.Core.DTOs.Notes.NoteDto                             0%
+  CrmApp.Core.DTOs.Notes.NoteFilterQuery                   100%
+  CrmApp.Core.DTOs.Notes.UpdateNoteDto                       0%
+  CrmApp.Core.DTOs.Opportunities.CreateOpportunityDto     83.3%
+  CrmApp.Core.DTOs.Opportunities.OpportunityDto              0%
+  CrmApp.Core.DTOs.Opportunities.OpportunityFilterQuery    100%
+  CrmApp.Core.DTOs.Opportunities.OpportunityStatsDto         0%
+  CrmApp.Core.DTOs.Opportunities.UpdateOpportunityDto     30.7%
+  CrmApp.Core.DTOs.Reports.CustomerGrowthDto               100%
+  CrmApp.Core.DTOs.Reports.CustomerReportDto               100%
+  CrmApp.Core.DTOs.Reports.CustomersByIndustryDto          100%
+  CrmApp.Core.DTOs.Reports.CustomersBySourceDto            100%
+  CrmApp.Core.DTOs.Reports.MonthlySalesDto                 100%
+  CrmApp.Core.DTOs.Reports.SalesByStageDto                 100%
+  CrmApp.Core.DTOs.Reports.SalesByUserDto                  100%
+  CrmApp.Core.DTOs.Reports.SalesReportDto                  100%
+  CrmApp.Core.DTOs.Roles.CreateRoleRequest                 100%
+  CrmApp.Core.DTOs.Roles.RoleDto                           100%
+  CrmApp.Core.DTOs.Roles.UpdateRoleRequest                66.6%
+  CrmApp.Core.DTOs.Settings.SystemSettingDto              77.7%
+  CrmApp.Core.DTOs.Settings.UpdateSystemSettingDto          50%
+  CrmApp.Core.DTOs.Users.CreateUserRequest                 100%
+  CrmApp.Core.DTOs.Users.UpdateUserRequest                 100%
+  CrmApp.Core.DTOs.Users.UserDto                           100%
+
+CrmApp.Domain                                               78%
+  CrmApp.Domain.Entities.Activity                         70.5%
+  CrmApp.Domain.Entities.ActivityLog                        80%
+  CrmApp.Domain.Entities.BaseEntity                       71.4%
+  CrmApp.Domain.Entities.Company                           100%
+  CrmApp.Domain.Entities.Contact                          73.6%
+  CrmApp.Domain.Entities.DealStage                        83.3%
+  CrmApp.Domain.Entities.Lead                               80%
+  CrmApp.Domain.Entities.Note                               70%
+  CrmApp.Domain.Entities.Opportunity                      42.1%
+  CrmApp.Domain.Entities.RefreshToken                      100%
+  CrmApp.Domain.Entities.Role                              100%
+  CrmApp.Domain.Entities.SystemSetting                    83.3%
+  CrmApp.Domain.Entities.User                              100%
+  CrmApp.Domain.Entities.UserRole                          100%
+
+CrmApp.Infrastructure                                     90.2%
+  CrmApp.Infrastructure.Data.ApplicationDbContext          100%
+  CrmApp.Infrastructure.Repositories.Repository<T>        84.4%
+  CrmApp.Infrastructure.Repositories.UnitOfWork           51.6%
+  CrmApp.Infrastructure.Services.AuthService               100%
+  CrmApp.Infrastructure.Services.CacheService              100%
+  CrmApp.Infrastructure.Services.ElasticsearchService     77.8%
+  CrmApp.Infrastructure.Services.TokenService             98.5%

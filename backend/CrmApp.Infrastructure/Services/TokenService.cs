@@ -91,7 +91,11 @@ public class TokenService : ITokenService
             }, out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
-            var userIdClaim = jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
+            // JWT serializes ClaimTypes.NameIdentifier as "nameid"
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier || x.Type == "nameid")?.Value;
+            
+            if (string.IsNullOrEmpty(userIdClaim))
+                return null;
 
             return Guid.Parse(userIdClaim);
         }

@@ -165,3 +165,6 @@ app.MapControllers();
 // Database is initialized by SQL scripts in database container
 Log.Information("Starting CRM API...");
 app.Run();
+
+// Make the implicit Program class public for integration tests
+public partial class Program { }

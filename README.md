@@ -464,9 +464,6 @@ npm run test
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## Lisans
-
-MIT
 
 ## Katkıda Bulunma
 

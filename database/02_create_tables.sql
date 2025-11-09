@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS crm.contacts (
 CREATE TABLE IF NOT EXISTS crm.deal_stages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
-    order_position INTEGER NOT NULL,
+    order INTEGER NOT NULL,
     description TEXT,
     color VARCHAR(50),
     is_default BOOLEAN NOT NULL DEFAULT false,
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS crm.deal_stages (
     CONSTRAINT uk_deal_stages_name UNIQUE (name),
     CONSTRAINT fk_deal_stages_created_by FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_deal_stages_updated_by FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL,
-    CONSTRAINT chk_deal_stages_order CHECK (order_position >= 0)
+    CONSTRAINT chk_deal_stages_order CHECK ("order" >= 0)
 );
 
 -- Leads table
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS crm.leads (
     value DECIMAL(18, 2),
     probability INTEGER,
     expected_close_date DATE,
-    assigned_to UUID,
+    assigned_user_id UUID,
     notes TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS crm.leads (
     -- Constraints
     CONSTRAINT fk_leads_company FOREIGN KEY (company_id) REFERENCES crm.companies(id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_contact FOREIGN KEY (contact_id) REFERENCES crm.contacts(id) ON DELETE SET NULL,
-    CONSTRAINT fk_leads_assigned_to FOREIGN KEY (assigned_to) REFERENCES auth.users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_assigned_user FOREIGN KEY (assigned_user_id) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_created_by FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_updated_by FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT chk_leads_value CHECK (value IS NULL OR value >= 0),
@@ -208,22 +208,24 @@ CREATE TABLE IF NOT EXISTS crm.opportunities (
     probability INTEGER,
     expected_close_date DATE,
     actual_close_date DATE,
-    assigned_to UUID,
+    assigned_user_id UUID,
     notes TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     created_by UUID,
     updated_by UUID,
+    deal_stage_id UUID,
     is_deleted BOOLEAN NOT NULL DEFAULT false,
     
     -- Constraints
     CONSTRAINT fk_opportunities_lead FOREIGN KEY (lead_id) REFERENCES crm.leads(id) ON DELETE SET NULL,
     CONSTRAINT fk_opportunities_company FOREIGN KEY (company_id) REFERENCES crm.companies(id) ON DELETE SET NULL,
     CONSTRAINT fk_opportunities_contact FOREIGN KEY (contact_id) REFERENCES crm.contacts(id) ON DELETE SET NULL,
-    CONSTRAINT fk_opportunities_assigned_to FOREIGN KEY (assigned_to) REFERENCES auth.users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_opportunities_assigned_user FOREIGN KEY (assigned_user_id) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_opportunities_created_by FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_opportunities_updated_by FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_opportunities_deal_stage FOREIGN KEY (deal_stage_id) REFERENCES crm.deal_stages(id) ON DELETE SET NULL,
     CONSTRAINT chk_opportunities_value CHECK (value >= 0),
     CONSTRAINT chk_opportunities_probability CHECK (probability IS NULL OR (probability >= 0 AND probability <= 100)),
     CONSTRAINT chk_opportunities_close_dates CHECK (actual_close_date IS NULL OR actual_close_date >= created_at::DATE)
@@ -243,7 +245,7 @@ CREATE TABLE IF NOT EXISTS crm.activities (
     contact_id UUID,
     lead_id UUID,
     opportunity_id UUID,
-    assigned_to UUID,
+    assigned_user_id UUID,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
@@ -256,7 +258,7 @@ CREATE TABLE IF NOT EXISTS crm.activities (
     CONSTRAINT fk_activities_contact FOREIGN KEY (contact_id) REFERENCES crm.contacts(id) ON DELETE SET NULL,
     CONSTRAINT fk_activities_lead FOREIGN KEY (lead_id) REFERENCES crm.leads(id) ON DELETE SET NULL,
     CONSTRAINT fk_activities_opportunity FOREIGN KEY (opportunity_id) REFERENCES crm.opportunities(id) ON DELETE SET NULL,
-    CONSTRAINT fk_activities_assigned_to FOREIGN KEY (assigned_to) REFERENCES auth.users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_activities_assigned_user FOREIGN KEY (assigned_user_id) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_activities_created_by FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT fk_activities_updated_by FOREIGN KEY (updated_by) REFERENCES auth.users(id) ON DELETE SET NULL,
     CONSTRAINT chk_activities_type CHECK (type IN ('call', 'meeting', 'email', 'task', 'deadline', 'other')),

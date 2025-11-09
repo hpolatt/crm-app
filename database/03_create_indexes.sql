@@ -64,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_deal_stages_is_active ON crm.deal_stages(is_activ
 CREATE INDEX IF NOT EXISTS idx_leads_company_id ON crm.leads(company_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_leads_contact_id ON crm.leads(contact_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_leads_status ON crm.leads(status) WHERE is_deleted = false;
-CREATE INDEX IF NOT EXISTS idx_leads_assigned_to ON crm.leads(assigned_to) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_leads_assigned_user_id ON crm.leads(assigned_user_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_leads_expected_close_date ON crm.leads(expected_close_date) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_leads_value ON crm.leads(value DESC) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_leads_created_at ON crm.leads(created_at DESC);
@@ -76,7 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_opportunities_lead_id ON crm.opportunities(lead_i
 CREATE INDEX IF NOT EXISTS idx_opportunities_company_id ON crm.opportunities(company_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_opportunities_contact_id ON crm.opportunities(contact_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_opportunities_stage ON crm.opportunities(stage) WHERE is_deleted = false;
-CREATE INDEX IF NOT EXISTS idx_opportunities_assigned_to ON crm.opportunities(assigned_to) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_opportunities_assigned_user_id ON crm.opportunities(assigned_user_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_opportunities_expected_close_date ON crm.opportunities(expected_close_date) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_opportunities_actual_close_date ON crm.opportunities(actual_close_date) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_opportunities_value ON crm.opportunities(value DESC) WHERE is_deleted = false;
@@ -92,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_activities_company_id ON crm.activities(company_i
 CREATE INDEX IF NOT EXISTS idx_activities_contact_id ON crm.activities(contact_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_activities_lead_id ON crm.activities(lead_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_activities_opportunity_id ON crm.activities(opportunity_id) WHERE is_deleted = false;
-CREATE INDEX IF NOT EXISTS idx_activities_assigned_to ON crm.activities(assigned_to) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_activities_assigned_user_id ON crm.activities(assigned_user_id) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_activities_due_date ON crm.activities(due_date) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_activities_completed_date ON crm.activities(completed_date) WHERE is_deleted = false;
 CREATE INDEX IF NOT EXISTS idx_activities_created_at ON crm.activities(created_at DESC);
@@ -126,13 +126,13 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_composite ON auth.user_roles(user_id, 
 CREATE INDEX IF NOT EXISTS idx_contacts_company_primary ON crm.contacts(company_id, is_primary) WHERE is_deleted = false;
 
 -- Leads by assigned user and status
-CREATE INDEX IF NOT EXISTS idx_leads_assigned_status ON crm.leads(assigned_to, status) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_leads_assigned_status ON crm.leads(assigned_user_id, status) WHERE is_deleted = false;
 
 -- Opportunities by assigned user and stage
-CREATE INDEX IF NOT EXISTS idx_opportunities_assigned_stage ON crm.opportunities(assigned_to, stage) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_opportunities_assigned_stage ON crm.opportunities(assigned_user_id, stage) WHERE is_deleted = false;
 
 -- Activities by assigned user and status
-CREATE INDEX IF NOT EXISTS idx_activities_assigned_status ON crm.activities(assigned_to, status) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS idx_activities_assigned_status ON crm.activities(assigned_user_id, status) WHERE is_deleted = false;
 
 -- Activities by due date and status
 CREATE INDEX IF NOT EXISTS idx_activities_due_status ON crm.activities(due_date, status) WHERE is_deleted = false;
