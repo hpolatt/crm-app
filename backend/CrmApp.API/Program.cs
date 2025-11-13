@@ -10,6 +10,9 @@ using CrmApp.Infrastructure.Repositories;
 using CrmApp.Core.Interfaces;
 using CrmApp.Core.Configuration;
 using CrmApp.API.Middleware;
+using CrmApp.API.HealthChecks;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,6 +80,12 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.AddHttpContextAccessor();
+
+// Add Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: new[] { "db", "sql", "postgres" })
+    .AddCheck<RedisHealthCheck>("redis", tags: new[] { "cache", "redis" })
+    .AddCheck<ElasticsearchHealthCheck>("elasticsearch", tags: new[] { "search", "elasticsearch" });
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -160,6 +169,25 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Health Check Endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("db"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false, // No checks, just returns if app is running
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
 app.MapControllers();
 
 // Database is initialized by SQL scripts in database container
