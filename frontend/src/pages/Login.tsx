@@ -13,6 +13,7 @@ import {
   Chip
 } from '@mui/material'
 import { LoginOutlined } from '@mui/icons-material'
+import { api } from '../services/api'
 
 interface LoginForm {
   email: string
@@ -36,21 +37,11 @@ const Login = () => {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      })
-
-      if (!response.ok) {
-        throw new Error('Giriş başarısız')
-      }
-
-      const data = await response.json()
+      const response = await api.post('/auth/login', form)
       
       // Store token and user info
-      localStorage.setItem('token', data.data.token)
-      localStorage.setItem('user', JSON.stringify(data.data.user))
+      localStorage.setItem('token', response.data.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.data.user))
       
       // Redirect to dashboard
       navigate('/')

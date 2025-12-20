@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,6 +8,8 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+export { API_BASE_URL }
 
 api.interceptors.request.use(
   (config) => {

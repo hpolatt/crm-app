@@ -1,4 +1,4 @@
-namespace PktApp.Core.DTOs;
+namespace PktApp.Core.DTOs.Common;
 
 public class ApiResponse<T>
 {

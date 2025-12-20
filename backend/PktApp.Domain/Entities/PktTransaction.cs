@@ -1,8 +1,10 @@
+using PktApp.Domain.Enums;
+
 namespace PktApp.Domain.Entities;
 
 public class PktTransaction : BaseEntity
 {
-    public string Status { get; set; } = string.Empty;
+    public TransactionStatus Status { get; set; }
     public Guid ReactorId { get; set; }
     public Guid ProductId { get; set; }
     public string WorkOrderNo { get; set; } = string.Empty;

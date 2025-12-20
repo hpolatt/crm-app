@@ -1,7 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using PKT.Persistence;
+using PktApp.Infrastructure;
+using PktApp.Domain.Enums;
+using Npgsql;
+
+// Register PostgreSQL enum mapping
+NpgsqlConnection.GlobalTypeMapper.MapEnum<TransactionStatus>();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +18,8 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-// Add Persistence layer (DbContext, Repositories, UnitOfWork)
-builder.Services.AddPersistence(builder.Configuration);
+// Add Infrastructure layer (DbContext, Repositories, UnitOfWork)
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -47,6 +52,9 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 app.UseSerilogRequestLogging();
 
+// IMPORTANT: CORS must come before routing/controllers
+app.UseCors("AllowAll");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -56,7 +64,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseCors("AllowAll");
 app.MapControllers();
 
 Log.Information("Starting PKT API...");

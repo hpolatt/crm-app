@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\PktApp.Core\CrmApp.Core.csproj" />
-    <ProjectReference Include="..\PktApp.Domain\CrmApp.Domain.csproj" />
+    <ProjectReference Include="..\PktApp.Core\PktApp.Core.csproj" />
+    <ProjectReference Include="..\PktApp.Domain\PktApp.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

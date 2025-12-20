@@ -24,7 +24,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import ScienceIcon from '@mui/icons-material/Science'
 import InventoryIcon from '@mui/icons-material/Inventory'
 import AssignmentIcon from '@mui/icons-material/Assignment'
-import axios from 'axios'
+import { api } from '../services/api'
 
 interface StatCardProps {
   title: string
@@ -84,9 +84,9 @@ function Dashboard() {
     try {
       setLoading(true)
       const [summary, reactorAnalytics, statusDist] = await Promise.all([
-        axios.get('http://localhost:5000/api/dashboard/summary'),
-        axios.get('http://localhost:5000/api/dashboard/reactor-analytics'),
-        axios.get('http://localhost:5000/api/dashboard/status-distribution'),
+        api.get('/dashboard/summary'),
+        api.get('/dashboard/reactor-analytics'),
+        api.get('/dashboard/status-distribution'),
       ])
 
       setStats({

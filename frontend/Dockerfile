@@ -6,8 +6,11 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-# Set API URL to use nginx proxy
-ENV VITE_API_URL=/api
+
+# Build arg for API URL
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=${VITE_API_URL}
+
 RUN npm run build
 
 FROM nginx:alpine

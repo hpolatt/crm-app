@@ -19,7 +19,7 @@ import {
   Grid,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import axios from 'axios';
+import { api } from '../services/api'
 
 interface Product {
   id: string;
@@ -56,7 +56,7 @@ export default function Products() {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/products');
+      const response = await api.get('/products');
       setProducts(response.data.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -91,9 +91,9 @@ export default function Products() {
   const handleSubmit = async () => {
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/products/${editingId}`, formData);
+        await api.put(`/products/${editingId}`, formData);
       } else {
-        await axios.post('http://localhost:5000/api/products', formData);
+        await api.post('/products', formData);
       }
       fetchProducts();
       handleClose();
@@ -105,7 +105,7 @@ export default function Products() {
   const handleDelete = async (id: string) => {
     if (window.confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/products/${id}`);
+        await api.delete(`/products/${id}`);
         fetchProducts();
       } catch (error) {
         console.error('Error deleting product:', error);

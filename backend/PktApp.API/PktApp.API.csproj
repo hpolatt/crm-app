@@ -27,9 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Infrastructure\CRM.Persistence\PKT.Persistence.csproj" />
-    <ProjectReference Include="..\Core\CRM.Domain\PKT.Domain.csproj" />
-    <ProjectReference Include="..\Core\CRM.Application\PKT.Application.csproj" />
+    <ProjectReference Include="..\PktApp.Infrastructure\PktApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\PktApp.Domain\PktApp.Domain.csproj" />
+    <ProjectReference Include="..\PktApp.Core\PktApp.Core.csproj" />
   </ItemGroup>
 
 </Project>

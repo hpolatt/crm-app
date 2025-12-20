@@ -18,7 +18,7 @@ import {
   TextField,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import axios from 'axios';
+import { api } from '../services/api';
 
 interface Reactor {
   id: string;
@@ -39,7 +39,7 @@ export default function Reactors() {
 
   const fetchReactors = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/reactors');
+      const response = await api.get('/reactors');
       setReactors(response.data.data || []);
     } catch (error) {
       console.error('Error fetching reactors:', error);
@@ -66,9 +66,9 @@ export default function Reactors() {
   const handleSubmit = async () => {
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/reactors/${editingId}`, formData);
+        await api.put(`/reactors/${editingId}`, formData);
       } else {
-        await axios.post('http://localhost:5000/api/reactors', formData);
+        await api.post('/reactors', formData);
       }
       fetchReactors();
       handleClose();
@@ -80,7 +80,7 @@ export default function Reactors() {
   const handleDelete = async (id: string) => {
     if (window.confirm('Bu reaktörü silmek istediğinize emin misiniz?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/reactors/${id}`);
+        await api.delete(`/reactors/${id}`);
         fetchReactors();
       } catch (error) {
         console.error('Error deleting reactor:', error);

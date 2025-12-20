@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\PktApp.Domain\CrmApp.Domain.csproj" />
+    <ProjectReference Include="..\PktApp.Domain\PktApp.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

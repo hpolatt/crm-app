@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using PKT.Application.DTOs.Common;
-using PKT.Application.DTOs.DelayReasons;
-using PKT.Application.Interfaces;
-using PKT.Domain.Entities;
+using PktApp.Core.DTOs.Common;
+using PktApp.Core.DTOs.DelayReasons;
+using PktApp.Core.Interfaces;
+using PktApp.Domain.Entities;
 
 namespace PktApp.API.Controllers;
 

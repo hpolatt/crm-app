@@ -4,6 +4,12 @@
 -- This script creates all tables for the PKT application
 -- =====================================================
 
+-- Create TransactionStatus enum type
+DO $$ BEGIN
+    DROP TYPE IF EXISTS "TransactionStatus" CASCADE;
+    CREATE TYPE "TransactionStatus" AS ENUM ('Planned', 'InProgress', 'Completed', 'Washing', 'WashingCompleted', 'Cancelled');
+END $$;
+
 -- Create DelayReasons table
 CREATE TABLE IF NOT EXISTS "DelayReasons" (
     "Id" uuid PRIMARY KEY,
@@ -37,7 +43,7 @@ CREATE TABLE IF NOT EXISTS "Products" (
 -- Create PktTransactions table
 CREATE TABLE IF NOT EXISTS "PktTransactions" (
     "Id" uuid PRIMARY KEY,
-    "Status" text NOT NULL,
+    "Status" "TransactionStatus" NOT NULL DEFAULT 'Planned',
     "ReactorId" uuid NOT NULL,
     "ProductId" uuid NOT NULL,
     "WorkOrderNo" character varying(100) NOT NULL,

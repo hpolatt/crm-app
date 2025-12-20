@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using PKT.Application.DTOs.Common;
-using PKT.Application.DTOs.Products;
-using PKT.Application.Interfaces;
-using PKT.Domain.Entities;
+using PktApp.Core.DTOs.Common;
+using PktApp.Core.DTOs.Products;
+using PktApp.Core.Interfaces;
+using PktApp.Domain.Entities;
 
 namespace PktApp.API.Controllers;
 

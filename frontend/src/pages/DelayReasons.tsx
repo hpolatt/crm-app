@@ -18,7 +18,7 @@ import {
   TextField,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import axios from 'axios';
+import { api } from '../services/api';
 
 interface DelayReason {
   id: string;
@@ -39,7 +39,7 @@ export default function DelayReasons() {
 
   const fetchDelayReasons = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/delayreasons');
+      const response = await api.get('/delayreasons');
       setDelayReasons(response.data.data || []);
     } catch (error) {
       console.error('Error fetching delay reasons:', error);
@@ -66,9 +66,9 @@ export default function DelayReasons() {
   const handleSubmit = async () => {
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/delayreasons/${editingId}`, formData);
+        await api.put(`/delayreasons/${editingId}`, formData);
       } else {
-        await axios.post('http://localhost:5000/api/delayreasons', formData);
+        await api.post('/delayreasons', formData);
       }
       fetchDelayReasons();
       handleClose();
@@ -80,7 +80,7 @@ export default function DelayReasons() {
   const handleDelete = async (id: string) => {
     if (window.confirm('Bu gecikme nedenini silmek istediğinize emin misiniz?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/delayreasons/${id}`);
+        await api.delete(`/delayreasons/${id}`);
         fetchDelayReasons();
       } catch (error) {
         console.error('Error deleting delay reason:', error);
