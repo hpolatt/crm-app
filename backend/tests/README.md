@@ -4,7 +4,7 @@ This directory contains backend test projects for the CRM application.
 
 ## Test Projects
 
-### CrmApp.UnitTests
+### PktApp.UnitTests
 Unit tests for business logic, services, and validation rules. Uses InMemory database for data isolation.
 
 **Test Coverage:**
@@ -14,7 +14,7 @@ Unit tests for business logic, services, and validation rules. Uses InMemory dat
 
 **Running unit tests:**
 ```bash
-cd backend/tests/CrmApp.UnitTests
+cd backend/tests/PktApp.UnitTests
 dotnet test
 ```
 
@@ -22,7 +22,7 @@ dotnet test
 
 ---
 
-### CrmApp.IntegrationTests
+### PktApp.IntegrationTests
 Integration tests for controllers and endpoints using WebApplicationFactory.
 
 **Test Coverage:**
@@ -33,7 +33,7 @@ Integration tests for controllers and endpoints using WebApplicationFactory.
 
 **Running integration tests:**
 ```bash
-cd backend/tests/CrmApp.IntegrationTests
+cd backend/tests/PktApp.IntegrationTests
 dotnet test
 ```
 
@@ -60,12 +60,12 @@ dotnet test --verbosity normal
 
 Run only unit tests:
 ```bash
-dotnet test tests/CrmApp.UnitTests
+dotnet test tests/PktApp.UnitTests
 ```
 
 Run only integration tests:
 ```bash
-dotnet test tests/CrmApp.IntegrationTests
+dotnet test tests/PktApp.IntegrationTests
 ```
 
 ---
@@ -74,7 +74,7 @@ dotnet test tests/CrmApp.IntegrationTests
 
 ```
 tests/
-├── CrmApp.UnitTests/
+├── PktApp.UnitTests/
 │   ├── Helpers/
 │   │   └── TestDataFactory.cs       # Factory for creating test entities
 │   ├── Services/
@@ -82,7 +82,7 @@ tests/
 │   └── Validation/
 │       └── NoteValidationTests.cs   # Note constraint validation tests
 │
-└── CrmApp.IntegrationTests/
+└── PktApp.IntegrationTests/
     ├── CustomWebApplicationFactory.cs   # Custom factory with InMemory DB
     └── Controllers/
         ├── AuthControllerTests.cs       # Auth endpoint integration tests

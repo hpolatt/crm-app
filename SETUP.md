@@ -9,7 +9,7 @@ Make sure you have the following installed:
 
 ### 2. Clone and Navigate
 ```bash
-cd /Users/huseyin/Dev/CrmApp
+cd /Users/huseyin/Dev/PktApp
 ```
 
 License: This repository is published under the Business Source License 1.1 (BSL-1.1). Commercial use and offering the software as a hosted service are restricted until 2026-11-09. See `LICENSE` for details.
@@ -112,7 +112,7 @@ Backend
 cd backend
 dotnet restore
 dotnet build
-dotnet run --project CrmApp.API
+dotnet run --project PktApp.API
 ```
 
 Frontend
@@ -141,9 +141,9 @@ npm run dev
 ## Project layout (quick overview)
 
 ```
-CrmApp/
+PktApp/
 ├── database/           # SQL scripts and DB Dockerfile
-├── backend/            # .NET backend (CrmApp.API, application layers)
+├── backend/            # .NET backend (PktApp.API, application layers)
 ├── frontend/           # React app and nginx config
 └── docker-compose.yml  # Orchestration for local development
 ```

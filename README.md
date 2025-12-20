@@ -65,7 +65,7 @@ Backend
 cd backend
 dotnet restore
 dotnet build
-dotnet run --project CrmApp.API
+dotnet run --project PktApp.API
 ```
 
 Frontend
@@ -154,21 +154,21 @@ If you run into problems, open an issue in this repository and I will take a loo
 
 ```- .NET 8 SDK (geliştirme için)
 
-CrmApp/- Node.js 18+ (geliştirme için)
+PktApp/- Node.js 18+ (geliştirme için)
 
 ├── backend/                    # .NET 8 Backend
 
-│   ├── CrmApp.API/            # REST API Controllers### Docker ile Çalıştırma
+│   ├── PktApp.API/            # REST API Controllers### Docker ile Çalıştırma
 
-│   ├── CrmApp.Application/    # Business Logic (MediatR)
+│   ├── PktApp.Application/    # Business Logic (MediatR)
 
-│   ├── CrmApp.Core/           # DTOs, Interfaces1. **Repository'yi klonlayın:**
+│   ├── PktApp.Core/           # DTOs, Interfaces1. **Repository'yi klonlayın:**
 
-│   ├── CrmApp.Domain/         # Entities, Models```bash
+│   ├── PktApp.Domain/         # Entities, Models```bash
 
-│   └── CrmApp.Infrastructure/ # Data Access, Servicesgit clone <repository-url>
+│   └── PktApp.Infrastructure/ # Data Access, Servicesgit clone <repository-url>
 
-│cd CrmApp
+│cd PktApp
 
 ├── frontend/                   # React Frontend```
 
@@ -222,11 +222,11 @@ cd backend
 
 ```bashdotnet build
 
-cd backenddotnet run --project CrmApp.API
+cd backenddotnet run --project PktApp.API
 
 dotnet restore```
 
-dotnet run --project CrmApp.API
+dotnet run --project PktApp.API
 
 ```#### Frontend
 
@@ -250,7 +250,7 @@ npm run dev```
 
 ```bashVeritabanı otomatik olarak oluşturulur ve seed data ile doldurulur.
 
-cd backend/CrmApp.Infrastructure
+cd backend/PktApp.Infrastructure
 
 dotnet ef migrations add MigrationName### Default Admin Kullanıcı
 
@@ -306,9 +306,9 @@ docker-compose logs -f frontendpsql -U crmuser -d crmdb -f 05_seed_data.sql
 
 cd backend    "Secret": "YourSuperSecretKeyForJWTTokenGeneration123!@#",
 
-dotnet test    "Issuer": "CrmApp",
+dotnet test    "Issuer": "PktApp",
 
-```    "Audience": "CrmAppUsers",
+```    "Audience": "PktAppUsers",
 
     "ExpiryMinutes": 60
 
@@ -414,7 +414,7 @@ For issues and questions:- `POST /api/leads` - Create lead
 
 ## ⭐ Show Your Supportcd backend
 
-dotnet watch run --project CrmApp.API
+dotnet watch run --project PktApp.API
 
 If you find this project helpful, please give it a star!```
 
@@ -433,9 +433,9 @@ npm run dev
 ### Migration Oluşturma
 
 ```bash
-cd backend/CrmApp.Infrastructure
-dotnet ef migrations add MigrationName -s ../CrmApp.API
-dotnet ef database update -s ../CrmApp.API
+cd backend/PktApp.Infrastructure
+dotnet ef migrations add MigrationName -s ../PktApp.API
+dotnet ef database update -s ../PktApp.API
 ```
 
 ## Testing

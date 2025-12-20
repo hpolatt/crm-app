@@ -12,6 +12,7 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  Button,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import DashboardIcon from '@mui/icons-material/Dashboard'
@@ -19,6 +20,7 @@ import ScienceIcon from '@mui/icons-material/Science'
 import InventoryIcon from '@mui/icons-material/Inventory'
 import WarningIcon from '@mui/icons-material/Warning'
 import AssignmentIcon from '@mui/icons-material/Assignment'
+import LogoutIcon from '@mui/icons-material/Logout'
 
 const drawerWidth = 240
 
@@ -36,6 +38,25 @@ function Layout() {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+
+  const getUserName = () => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        return `${user.firstName} ${user.lastName}`
+      } catch {
+        return 'Kullanıcı'
+      }
+    }
+    return 'Kullanıcı'
   }
 
   const drawer = (
@@ -76,9 +97,19 @@ function Layout() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             PKT Uygulaması
           </Typography>
+          <Typography variant="body2" sx={{ mr: 2 }}>
+            {getUserName()}
+          </Typography>
+          <Button 
+            color="inherit" 
+            startIcon={<LogoutIcon />}
+            onClick={handleLogout}
+          >
+            Çıkış
+          </Button>
         </Toolbar>
       </AppBar>
       <Box

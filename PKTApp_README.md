@@ -50,7 +50,7 @@ backend/
 │   └── CRM.Application/       # DTOs ve Interfaces
 ├── Infrastructure/
 │   └── CRM.Persistence/       # DbContext, Repositories, UnitOfWork
-├── CrmApp.API/                # API Controllers
+├── PktApp.API/                # API Controllers
 └── database/                  # SQL scriptleri
     ├── 02_create_tables.sql
     ├── 03_create_indexes.sql
@@ -112,7 +112,7 @@ backend/
 
 2. Projeyi derleyin ve çalıştırın:
    ```bash
-   cd backend/CrmApp.API
+   cd backend/PktApp.API
    dotnet build
    dotnet run
    ```
@@ -132,4 +132,4 @@ Proje CRM uygulamasından refactore edilmiştir:
 - `CRM.Domain` → `PKT.Domain`
 - `CRM.Application` → `PKT.Application`
 - `CRM.Persistence` → `PKT.Persistence`
-- `CrmApp` → `PKTApp`
+- `PktApp` → `PKTApp`

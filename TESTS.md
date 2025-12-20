@@ -152,7 +152,7 @@ Son güncelleme: 10 Kasım 2025
 
 ---
 
-## 1. Unit Tests (CrmApp.UnitTests)
+## 1. Unit Tests (PktApp.UnitTests)
 
 ### ✅ Test Yazılmış Sınıflar
 
@@ -342,7 +342,7 @@ Tüm kritik servisler ve repository'ler için testler tamamlandı! ✅
 
 ---
 
-## 2. Integration Tests (CrmApp.IntegrationTests)
+## 2. Integration Tests (PktApp.IntegrationTests)
 
 ### ✅ Test Yazılmış Controller'lar
 
@@ -572,19 +572,19 @@ Tüm kritik servisler ve repository'ler için testler tamamlandı! ✅
 ### Tüm Testleri Çalıştır
 ```bash
 cd backend
-dotnet test CrmApp.sln --verbosity normal
+dotnet test PktApp.sln --verbosity normal
 ```
 
 ### Sadece Unit Testler
 ```bash
 cd backend
-dotnet test tests/CrmApp.UnitTests/CrmApp.UnitTests.csproj
+dotnet test tests/PktApp.UnitTests/PktApp.UnitTests.csproj
 ```
 
 ### Sadece Integration Testler
 ```bash
 cd backend
-dotnet test tests/CrmApp.IntegrationTests/CrmApp.IntegrationTests.csproj
+dotnet test tests/PktApp.IntegrationTests/PktApp.IntegrationTests.csproj
 ```
 
 ### Coverage Report (Gelecek)
