@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using CrmApp.Domain.Entities;
+using PKTApp.Domain.Entities;
 
-namespace CrmApp.Core.Interfaces;
+namespace PKTApp.Core.Interfaces;
 
 public interface IRepository<T> where T : BaseEntity
 {

@@ -1,4 +1,4 @@
-namespace CRM.Application.DTOs;
+namespace PKT.Application.DTOs.Common;
 
 public class ApiResponse<T>
 {

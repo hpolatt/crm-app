@@ -1,4 +1,4 @@
-# CRM Application - Setup Instructions
+# PKT Application - Setup Instructions
 
 ## Quick Start Guide
 

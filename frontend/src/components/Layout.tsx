@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
 import {
   AppBar,
   Box,
@@ -16,53 +15,34 @@ import {
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import DashboardIcon from '@mui/icons-material/Dashboard'
-import BusinessIcon from '@mui/icons-material/Business'
-import ContactsIcon from '@mui/icons-material/Contacts'
-import LeaderboardIcon from '@mui/icons-material/Leaderboard'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import ScienceIcon from '@mui/icons-material/Science'
+import InventoryIcon from '@mui/icons-material/Inventory'
+import WarningIcon from '@mui/icons-material/Warning'
 import AssignmentIcon from '@mui/icons-material/Assignment'
-import DescriptionIcon from '@mui/icons-material/Description'
-import AssessmentIcon from '@mui/icons-material/Assessment'
-import SettingsIcon from '@mui/icons-material/Settings'
-import HistoryIcon from '@mui/icons-material/History'
-import LogoutIcon from '@mui/icons-material/Logout'
-import { logout } from '../store/slices/authSlice'
 
 const drawerWidth = 240
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Companies', icon: <BusinessIcon />, path: '/companies' },
-  { text: 'Contacts', icon: <ContactsIcon />, path: '/contacts' },
-  { text: 'Leads', icon: <LeaderboardIcon />, path: '/leads' },
-  { text: 'Opportunities', icon: <TrendingUpIcon />, path: '/opportunities' },
-  { text: 'Activities', icon: <AssignmentIcon />, path: '/activities' },
-  { text: 'Deal Stages', icon: <SettingsIcon />, path: '/deal-stages' },
-  { text: 'Notes', icon: <DescriptionIcon />, path: '/notes' },
-  { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-  { text: 'Activity Logs', icon: <HistoryIcon />, path: '/activity-logs' },
+  { text: 'Reaktörler', icon: <ScienceIcon />, path: '/reactors' },
+  { text: 'Ürünler', icon: <InventoryIcon />, path: '/products' },
+  { text: 'Gecikme Nedenleri', icon: <WarningIcon />, path: '/delayreasons' },
+  { text: 'PKT İşlemleri', icon: <AssignmentIcon />, path: '/transactions' },
 ]
 
 function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const navigate = useNavigate()
-  const dispatch = useDispatch()
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
-  }
-
-  const handleLogout = () => {
-    dispatch(logout())
-    navigate('/login')
   }
 
   const drawer = (
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
-          CRM App
+          PKT App
         </Typography>
       </Toolbar>
       <List>
@@ -74,14 +54,6 @@ function Layout() {
             </ListItemButton>
           </ListItem>
         ))}
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItemButton>
-        </ListItem>
       </List>
     </div>
   )
@@ -105,7 +77,7 @@ function Layout() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            CRM Application
+            PKT Uygulaması
           </Typography>
         </Toolbar>
       </AppBar>

@@ -3,16 +3,16 @@ import {
   Box,
   Container,
   Grid,
-  Paper,
   Typography,
   Card,
   CardContent,
 } from '@mui/material'
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,16 +20,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import BusinessIcon from '@mui/icons-material/Business'
-import ContactsIcon from '@mui/icons-material/Contacts'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
+import SettingsIcon from '@mui/icons-material/Settings'
+import ScienceIcon from '@mui/icons-material/Science'
+import InventoryIcon from '@mui/icons-material/Inventory'
 import AssignmentIcon from '@mui/icons-material/Assignment'
-import { dashboardService } from '../services/dashboardService'
-import { reportsService } from '../services/reportsService'
-import { DashboardSummary } from '../types/dashboard'
-import { SalesReportDto } from '../types/reports'
-import LoadingSpinner from '../components/LoadingSpinner'
-import { useToast } from '../components/Toast'
+import axios from 'axios'
 
 interface StatCardProps {
   title: string
@@ -68,11 +63,18 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
   )
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+
 function Dashboard() {
   const [loading, setLoading] = useState(true)
-  const [summary, setSummary] = useState<DashboardSummary | null>(null)
-  const [salesReport, setSalesReport] = useState<SalesReportDto | null>(null)
-  const { showToast } = useToast()
+  const [stats, setStats] = useState({
+    totalTransactions: 0,
+    activeReactors: 0,
+    totalProducts: 0,
+    delayReasons: 0,
+  })
+  const [statusData, setStatusData] = useState<any[]>([])
+  const [reactorData, setReactorData] = useState<any[]>([])
 
   useEffect(() => {
     loadData()
@@ -81,14 +83,37 @@ function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [summaryData, salesData] = await Promise.all([
-        dashboardService.getSummary(),
-        reportsService.getSalesReport(),
+      const [summary, reactorAnalytics, statusDist] = await Promise.all([
+        axios.get('http://localhost:5000/api/dashboard/summary'),
+        axios.get('http://localhost:5000/api/dashboard/reactor-analytics'),
+        axios.get('http://localhost:5000/api/dashboard/status-distribution'),
       ])
-      setSummary(summaryData)
-      setSalesReport(salesData)
+
+      setStats({
+        totalTransactions: summary.data.data?.totalProductionCount || 0,
+        activeReactors: summary.data.data?.activeProductionCount || 0,
+        totalProducts: summary.data.data?.completedProductionCount || 0,
+        delayReasons: Math.round(summary.data.data?.totalDelayDurationHours || 0),
+      })
+
+      // Status distribution data
+      const statusData = statusDist.data.data || []
+      setStatusData(
+        statusData.map((item: any) => ({
+          name: item.status,
+          value: item.count,
+        }))
+      )
+
+      // Reactor analytics data
+      const reactorData = reactorAnalytics.data.data || []
+      setReactorData(
+        reactorData.map((item: any) => ({
+          name: item.reactorName,
+          count: item.productionCount,
+        }))
+      )
     } catch (error) {
-      showToast('Failed to load dashboard data', 'error')
       console.error('Failed to load dashboard data:', error)
     } finally {
       setLoading(false)
@@ -96,156 +121,109 @@ function Dashboard() {
   }
 
   if (loading) {
-    return <LoadingSpinner open={loading} />
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+        <Typography>Yükleniyor...</Typography>
+      </Box>
+    )
   }
 
   return (
     <Container maxWidth="xl">
       <Box sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Dashboard
+          PKT Dashboard
         </Typography>
 
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Companies"
-              value={summary?.totalCompanies || 0}
-              icon={<BusinessIcon sx={{ color: 'white' }} />}
+              title="Toplam İşlem"
+              value={stats.totalTransactions}
+              icon={<AssignmentIcon sx={{ color: 'white' }} />}
               color="#1976d2"
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Contacts"
-              value={summary?.totalContacts || 0}
-              icon={<ContactsIcon sx={{ color: 'white' }} />}
+              title="Aktif Reaktörler"
+              value={stats.activeReactors}
+              icon={<ScienceIcon sx={{ color: 'white' }} />}
               color="#2e7d32"
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Opportunities"
-              value={summary?.totalOpportunities || 0}
-              icon={<TrendingUpIcon sx={{ color: 'white' }} />}
+              title="Toplam Ürün"
+              value={stats.totalProducts}
+              icon={<InventoryIcon sx={{ color: 'white' }} />}
               color="#ed6c02"
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Activities"
-              value={summary?.totalActivities || 0}
-              icon={<AssignmentIcon sx={{ color: 'white' }} />}
+              title="Gecikme Nedenleri"
+              value={stats.delayReasons}
+              icon={<SettingsIcon sx={{ color: 'white' }} />}
               color="#9c27b0"
             />
           </Grid>
         </Grid>
 
-        {/* Revenue Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={4}>
+        {/* Charts */}
+        <Grid container spacing={3}>
+          {/* Transaction Status Distribution */}
+          <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Revenue
+                <Typography variant="h6" gutterBottom>
+                  İşlem Durumları
                 </Typography>
-                <Typography variant="h4">
-                  ${(summary?.totalRevenue || 0).toLocaleString()}
-                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }: any) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {statusData.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={4}>
+
+          {/* Transactions by Reactor */}
+          <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Average Deal Size
+                <Typography variant="h6" gutterBottom>
+                  Reaktörlere Göre İşlemler
                 </Typography>
-                <Typography variant="h4">
-                  ${(summary?.averageDealSize || 0).toLocaleString()}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Win Rate
-                </Typography>
-                <Typography variant="h4">
-                  {((summary?.winRate || 0) * 100).toFixed(1)}%
-                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={reactorData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="İşlem Sayısı" />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
-
-        {/* Charts */}
-        {salesReport && (
-          <>
-            {/* Monthly Sales Trend */}
-            <Paper sx={{ p: 3, mb: 4 }}>
-              <Typography variant="h6" gutterBottom>
-                Monthly Sales Trend
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={salesReport.monthlySales}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="totalValue" stroke="#8884d8" name="Total Value" />
-                  <Line type="monotone" dataKey="wonValue" stroke="#82ca9d" name="Won Value" />
-                </LineChart>
-              </ResponsiveContainer>
-            </Paper>
-
-            <Grid container spacing={3}>
-              {/* Sales by Stage */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Sales by Stage
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={salesReport.salesByStage}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="stage" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="totalValue" fill="#8884d8" name="Total Value" />
-                      <Bar dataKey="count" fill="#82ca9d" name="Count" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Paper>
-              </Grid>
-
-              {/* Sales by User */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Sales by User
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={salesReport.salesByUser}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="userName" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="totalValue" fill="#8884d8" name="Total Value" />
-                      <Bar dataKey="wonCount" fill="#82ca9d" name="Won Count" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Paper>
-              </Grid>
-            </Grid>
-          </>
-        )}
       </Box>
     </Container>
   )

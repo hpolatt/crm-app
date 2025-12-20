@@ -1,86 +1,65 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using CrmApp.Core.DTOs;
-using CrmApp.Core.DTOs.Dashboard;
-using CrmApp.Core.Interfaces;
+using PKT.Application.DTOs.Common;
+using PKT.Application.Interfaces;
 
-namespace CrmApp.API.Controllers;
-
-[Authorize]
-[ApiController]
-[Route("api/[controller]")]
-public class DashboardController : BaseController
+namespace PKT.API.Controllers
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<DashboardController> _logger;
-
-    public DashboardController(IUnitOfWork unitOfWork, ILogger<DashboardController> logger)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class DashboardController : ControllerBase
     {
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-    }
+        private readonly IDashboardService _dashboardService;
 
-    [HttpGet("summary")]
-    public async Task<ActionResult<ApiResponse<DashboardSummaryDto>>> GetSummary()
-    {
-        try
+        public DashboardController(IDashboardService dashboardService)
         {
-            var companies = await _unitOfWork.Companies.GetAllAsync();
-            var contacts = await _unitOfWork.Contacts.GetAllAsync();
-            var leads = await _unitOfWork.Leads.GetAllAsync();
-            var opportunities = await _unitOfWork.Opportunities.GetAllAsync();
-            var activities = await _unitOfWork.Activities.GetAllAsync();
-
-            var activeCompanies = companies.Where(c => !c.IsDeleted && c.IsActive);
-            var activeContacts = contacts.Where(c => !c.IsDeleted);
-            var activeLeads = leads.Where(l => !l.IsDeleted && l.Status != "converted" && l.Status != "lost");
-            var activeOpportunities = opportunities.Where(o => !o.IsDeleted);
-
-            var wonOpportunities = activeOpportunities.Where(o => o.Stage == "won" || o.Stage == "closed-won");
-            var lostOpportunities = activeOpportunities.Where(o => o.Stage == "lost" || o.Stage == "closed-lost");
-            var openOpportunities = activeOpportunities.Where(o => 
-                o.Stage != "won" && o.Stage != "closed-won" && 
-                o.Stage != "lost" && o.Stage != "closed-lost");
-
-            var today = DateTime.UtcNow.Date;
-            var todayActivities = activities.Where(a => !a.IsDeleted && a.DueDate.HasValue && a.DueDate.Value.Date == today);
-            var overdueActivities = activities.Where(a => !a.IsDeleted && a.DueDate.HasValue && 
-                a.DueDate.Value.Date < today && a.Status != "completed");
-
-            var totalWon = wonOpportunities.Count();
-            var totalLost = lostOpportunities.Count();
-            var winRate = totalWon + totalLost > 0 ? (double)totalWon / (totalWon + totalLost) * 100 : 0;
-
-            var summary = new DashboardSummaryDto
-            {
-                TotalCompanies = activeCompanies.Count(),
-                ActiveCompanies = activeCompanies.Count(c => c.IsActive),
-                TotalContacts = activeContacts.Count(),
-                TotalLeads = leads.Where(l => !l.IsDeleted).Count(),
-                ActiveLeads = activeLeads.Count(),
-                TotalOpportunities = activeOpportunities.Count(),
-                OpenOpportunities = openOpportunities.Count(),
-                WonOpportunities = wonOpportunities.Count(),
-                LostOpportunities = lostOpportunities.Count(),
-                TotalOpportunityValue = activeOpportunities.Sum(o => o.Value),
-                WonOpportunityValue = wonOpportunities.Sum(o => o.Value),
-                OpenOpportunityValue = openOpportunities.Sum(o => o.Value),
-                TotalActivities = activities.Where(a => !a.IsDeleted).Count(),
-                OverdueActivities = overdueActivities.Count(),
-                TodayActivities = todayActivities.Count(),
-                WinRate = Math.Round(winRate, 2),
-                AverageDealSize = wonOpportunities.Any() ? wonOpportunities.Average(o => o.Value) : 0
-            };
-
-            return Ok(ApiResponse<DashboardSummaryDto>.SuccessResponse(summary, "Dashboard summary retrieved successfully"));
+            _dashboardService = dashboardService;
         }
-        catch (Exception ex)
+
+        [HttpGet("summary")]
+        public async Task<IActionResult> GetSummary()
         {
-            _logger.LogError(ex, "Error retrieving dashboard summary");
-            return StatusCode(500, ApiResponse<DashboardSummaryDto>.ErrorResponse(
-                "An error occurred while retrieving dashboard summary",
-                new List<string> { ex.Message }
-            ));
+            var summary = await _dashboardService.GetSummaryAsync();
+            return Ok(ApiResponse<object>.SuccessResponse(summary));
+        }
+
+        [HttpGet("reactor-analytics")]
+        public async Task<IActionResult> GetReactorAnalytics()
+        {
+            var analytics = await _dashboardService.GetReactorAnalyticsAsync();
+            return Ok(ApiResponse<object>.SuccessResponse(analytics));
+        }
+
+        [HttpGet("product-analytics")]
+        public async Task<IActionResult> GetProductAnalytics([FromQuery] int topCount = 10)
+        {
+            var analytics = await _dashboardService.GetProductAnalyticsAsync(topCount);
+            return Ok(ApiResponse<object>.SuccessResponse(analytics));
+        }
+
+        [HttpGet("delay-analytics")]
+        public async Task<IActionResult> GetDelayAnalytics()
+        {
+            var analytics = await _dashboardService.GetDelayAnalyticsAsync();
+            return Ok(ApiResponse<object>.SuccessResponse(analytics));
+        }
+
+        [HttpGet("daily-production")]
+        public async Task<IActionResult> GetDailyProduction(
+            [FromQuery] DateTime? startDate, 
+            [FromQuery] DateTime? endDate)
+        {
+            var start = startDate ?? DateTime.UtcNow.AddDays(-30);
+            var end = endDate ?? DateTime.UtcNow;
+            
+            var dailyData = await _dashboardService.GetDailyProductionAsync(start, end);
+            return Ok(ApiResponse<object>.SuccessResponse(dailyData));
+        }
+
+        [HttpGet("status-distribution")]
+        public async Task<IActionResult> GetStatusDistribution()
+        {
+            var distribution = await _dashboardService.GetStatusDistributionAsync();
+            return Ok(ApiResponse<object>.SuccessResponse(distribution));
         }
     }
 }

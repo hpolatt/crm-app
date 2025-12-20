@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using CRM.Application.Interfaces;
-using CRM.Domain.Entities;
-using CRM.Persistence.Data;
+using PKT.Application.Interfaces;
+using PKT.Domain.Entities;
+using PKT.Persistence.Data;
 
-namespace CRM.Persistence.Repositories;
+namespace PKT.Persistence.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
@@ -13,32 +13,25 @@ public class UnitOfWork : IUnitOfWork
     public UnitOfWork(ApplicationDbContext context)
     {
         _context = context;
-        Users = new Repository<User>(context);
-        Companies = new Repository<Company>(context);
-        Contacts = new Repository<Contact>(context);
-        Leads = new Repository<Lead>(context);
-        Opportunities = new Repository<Opportunity>(context);
-        Activities = new Repository<Activity>(context);
-        DealStages = new Repository<DealStage>(context);
-        Notes = new Repository<Note>(context);
-        SystemSettings = new Repository<SystemSetting>(context);
-        ActivityLogs = new Repository<ActivityLog>(context);
+        DelayReasons = new Repository<DelayReason>(context);
+        Reactors = new Repository<Reactor>(context);
+        Products = new Repository<Product>(context);
+        PktTransactions = new Repository<PktTransaction>(context);
     }
 
-    public IRepository<User> Users { get; }
-    public IRepository<Company> Companies { get; }
-    public IRepository<Contact> Contacts { get; }
-    public IRepository<Lead> Leads { get; }
-    public IRepository<Opportunity> Opportunities { get; }
-    public IRepository<Activity> Activities { get; }
-    public IRepository<DealStage> DealStages { get; }
-    public IRepository<Note> Notes { get; }
-    public IRepository<SystemSetting> SystemSettings { get; }
-    public IRepository<ActivityLog> ActivityLogs { get; }
+    public IRepository<DelayReason> DelayReasons { get; }
+    public IRepository<Reactor> Reactors { get; }
+    public IRepository<Product> Products { get; }
+    public IRepository<PktTransaction> PktTransactions { get; }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
+    {
+        return await SaveChangesAsync(cancellationToken);
     }
 
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)

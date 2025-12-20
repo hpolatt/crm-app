@@ -18,6 +18,7 @@
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.PostgreSQL" Version="2.3.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.1" />
     <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="8.0.1" />
@@ -26,8 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CrmApp.Application\CrmApp.Application.csproj" />
-    <ProjectReference Include="..\CrmApp.Infrastructure\CrmApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\Infrastructure\CRM.Persistence\CRM.Persistence.csproj" />
+    <ProjectReference Include="..\Core\CRM.Domain\CRM.Domain.csproj" />
+    <ProjectReference Include="..\Core\CRM.Application\CRM.Application.csproj" />
   </ItemGroup>
 
 </Project>

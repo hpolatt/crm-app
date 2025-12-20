@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using CRM.Domain.Entities;
+using PKT.Domain.Entities;
 
-namespace CRM.Persistence.Data;
+namespace PKT.Persistence.Data;
 
 public class ApplicationDbContext : DbContext
 {
@@ -10,165 +10,82 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    // Auth Schema
-    public DbSet<User> Users { get; set; } = null!;
-    public DbSet<Role> Roles { get; set; } = null!;
-    public DbSet<UserRole> UserRoles { get; set; } = null!;
-    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
-
-    // CRM Schema
-    public DbSet<Company> Companies { get; set; } = null!;
-    public DbSet<Contact> Contacts { get; set; } = null!;
-    public DbSet<Lead> Leads { get; set; } = null!;
-    public DbSet<Opportunity> Opportunities { get; set; } = null!;
-    public DbSet<Activity> Activities { get; set; } = null!;
-    public DbSet<DealStage> DealStages { get; set; } = null!;
-    public DbSet<Note> Notes { get; set; } = null!;
-    public DbSet<SystemSetting> SystemSettings { get; set; } = null!;
-    public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
+    // PKT Schema
+    public DbSet<DelayReason> DelayReasons { get; set; } = null!;
+    public DbSet<Reactor> Reactors { get; set; } = null!;
+    public DbSet<Product> Products { get; set; } = null!;
+    public DbSet<PktTransaction> PktTransactions { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         // Set default schema
-        modelBuilder.HasDefaultSchema("crm");
+        modelBuilder.HasDefaultSchema("public");
 
-        // Configure Auth entities
-        modelBuilder.Entity<User>(entity =>
+        // Configure DelayReasons
+        modelBuilder.Entity<DelayReason>(entity =>
         {
-            entity.ToTable("users", "auth");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-            entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
-            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-            entity.HasIndex(e => e.Email).IsUnique().HasFilter("is_deleted = false");
-            
-            entity.HasMany(e => e.UserRoles)
-                .WithOne(e => e.User)
-                .HasForeignKey(e => e.UserId);
-                
-            entity.HasMany(e => e.RefreshTokens)
-                .WithOne(e => e.User)
-                .HasForeignKey(e => e.UserId);
-        });
-
-        modelBuilder.Entity<Role>(entity =>
-        {
-            entity.ToTable("roles", "auth");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
-            entity.HasIndex(e => e.Name).IsUnique();
-        });
-
-        modelBuilder.Entity<UserRole>(entity =>
-        {
-            entity.ToTable("user_roles", "auth");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
-        });
-
-        modelBuilder.Entity<RefreshToken>(entity =>
-        {
-            entity.ToTable("refresh_tokens", "auth");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Token).IsRequired().HasMaxLength(500);
-            entity.HasIndex(e => e.Token).IsUnique();
-        });
-
-        // Configure CRM entities
-        modelBuilder.Entity<Company>(entity =>
-        {
-            entity.ToTable("companies", "crm");
+            entity.ToTable("DelayReasons");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
-            entity.HasIndex(e => e.Name).HasFilter("is_deleted = false");
+            entity.Property(e => e.CreatedAt).IsRequired();
+        });
+
+        // Configure Reactors
+        modelBuilder.Entity<Reactor>(entity =>
+        {
+            entity.ToTable("Reactors");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.CreatedAt).IsRequired();
+        });
+
+        // Configure Products
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.ToTable("Products");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SBU).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ProductCode).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ProductName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.MinProductionQuantity).HasPrecision(18, 2);
+            entity.Property(e => e.MaxProductionQuantity).HasPrecision(18, 2);
+            entity.Property(e => e.ProductionDurationHours).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+        });
+
+        // Configure PktTransactions
+        modelBuilder.Entity<PktTransaction>(entity =>
+        {
+            entity.ToTable("PktTransactions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).IsRequired();
+            entity.Property(e => e.WorkOrderNo).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LotNo).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.CausticAmountKg).HasPrecision(18, 2);
+            entity.Property(e => e.CreatedAt).IsRequired();
             
-            entity.HasMany(e => e.Contacts)
-                .WithOne(e => e.Company)
-                .HasForeignKey(e => e.CompanyId);
+            entity.HasIndex(e => e.ReactorId).HasDatabaseName("IX_PktTransactions_ReaktorId");
+            entity.HasIndex(e => e.ProductId).HasDatabaseName("IX_PktTransactions_ProductId");
+            entity.HasIndex(e => e.DelayReasonId).HasDatabaseName("IX_PktTransactions_DelayReasonId");
+            
+            // Configure relationships
+            entity.HasOne(e => e.Reactor)
+                .WithMany(r => r.PktTransactions)
+                .HasForeignKey(e => e.ReactorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne(e => e.Product)
+                .WithMany(p => p.PktTransactions)
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne(e => e.DelayReason)
+                .WithMany(d => d.PktTransactions)
+                .HasForeignKey(e => e.DelayReasonId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
-
-        modelBuilder.Entity<Contact>(entity =>
-        {
-            entity.ToTable("contacts", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-        });
-
-        modelBuilder.Entity<Lead>(entity =>
-        {
-            entity.ToTable("leads", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
-            entity.Property(e => e.Status).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Opportunity>(entity =>
-        {
-            entity.ToTable("opportunities", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
-            entity.Property(e => e.Stage).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Activity>(entity =>
-        {
-            entity.ToTable("activities", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Type).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Subject).IsRequired().HasMaxLength(255);
-        });
-
-        modelBuilder.Entity<DealStage>(entity =>
-        {
-            entity.ToTable("deal_stages", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.HasIndex(e => e.Order);
-        });
-
-        modelBuilder.Entity<Note>(entity =>
-        {
-            entity.ToTable("notes", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Content).IsRequired();
-        });
-
-        modelBuilder.Entity<SystemSetting>(entity =>
-        {
-            entity.ToTable("system_settings", "crm");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Key).IsRequired().HasMaxLength(100);
-            entity.HasIndex(e => e.Key).IsUnique();
-        });
-
-        modelBuilder.Entity<ActivityLog>(entity =>
-        {
-            entity.ToTable("activity_logs", "audit");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.EntityType).IsRequired().HasMaxLength(100);
-            entity.HasIndex(e => e.UserId);
-            entity.HasIndex(e => new { e.EntityType, e.EntityId });
-            entity.HasIndex(e => e.CreatedAt);
-        });
-
-        // Configure column names to match database snake_case
-        foreach (var entity in modelBuilder.Model.GetEntityTypes())
-        {
-            foreach (var property in entity.GetProperties())
-            {
-                property.SetColumnName(ToSnakeCase(property.Name));
-            }
-        }
-    }
-
-    private static string ToSnakeCase(string name)
-    {
-        return string.Concat(name.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

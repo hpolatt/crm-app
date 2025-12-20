@@ -1,25 +1,21 @@
-# CRM Application
+# PKT Application
 
-I built this CRM as a practical, containerized starter for small-to-medium projects. It combines a .NET 8 API backend with a React + TypeScript frontend and includes PostgreSQL, Redis, Elasticsearch and Kibana in the development stack so you can run everything locally with Docker.
+This is a Production Tracking Application (PKT) built for managing manufacturing processes, reactors, products, and production transactions. It combines a .NET 8 API backend with a React + TypeScript frontend and includes PostgreSQL in the development stack.
 
 License: This repository is published under the Business Source License 1.1 (BSL-1.1). Commercial use and offering this project as a hosted service are restricted until 2026-11-09, after which the code will be available under the MIT license. See `LICENSE` for details.
 
 ## What this repo includes
 
-- Core modules: Companies, Contacts, Leads, Opportunities, Notes
-- Role-based access control (SuperAdmin, Admin, User)
-- JWT authentication with refresh tokens
-- Request/response logging to Elasticsearch (viewable in Kibana)
-- Redis caching for common queries
+- Core modules: Reactors, Products, Delay Reasons, PKT Transactions
+- Production tracking with status management (Planlanan, Devam Ediyor, Tamamlandı, İptal Edildi, Gecikmiş)
+- Dashboard with charts and metrics
 - Docker Compose setup for local development and testing
 
 ## Tech stack
 
-- Backend: .NET 8, Entity Framework Core, MediatR, Serilog
-- Frontend: React 18, TypeScript, Vite, Material-UI
+- Backend: .NET 8, Entity Framework Core
+- Frontend: React 18, TypeScript, Vite, Material-UI, Recharts
 - Database: PostgreSQL
-- Cache: Redis
-- Logging: Elasticsearch + Kibana
 - Containerization: Docker & Docker Compose
 
 ---

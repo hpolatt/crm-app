@@ -1,6 +1,6 @@
-# Contributing to CRM Application
+# Contributing to PKT Application
 
-Thank you for your interest in contributing to this CRM Application! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to this PKT Application! This document provides guidelines and instructions for contributing.
 
 ## 🤝 How to Contribute
 
@@ -92,9 +92,9 @@ Quick steps to get the project running locally (I recommend Docker for a reprodu
 1. Clone your fork and add the upstream remote
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/crm-app.git
-cd crm-app
-git remote add upstream https://github.com/hpolatt/crm-app.git
+git clone https://github.com/YOUR_USERNAME/pkt-app.git
+cd pkt-app
+git remote add upstream https://github.com/hpolatt/pkt-app.git
 ```
 
 2. Copy environment template and edit local values:
@@ -153,11 +153,11 @@ docker-compose logs -f backend
 To access the database or Redis (if running in Docker):
 
 ```bash
-docker exec -it crm-database psql -U crmuser -d crmdb
-docker exec -it crm-redis redis-cli -a <REDIS_PASSWORD>
+docker exec -it pkt-database psql -U pktuser -d pktdb
+docker exec -it pkt-redis redis-cli -a <REDIS_PASSWORD>
 ```
 
-For Elasticsearch logs, open Kibana at `http://localhost:5601` and create the `crm-logs-*` index pattern.
+For Elasticsearch logs, open Kibana at `http://localhost:5601` and create the `pkt-logs-*` index pattern.
 
 ## Release process
 

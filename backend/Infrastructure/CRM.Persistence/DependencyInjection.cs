@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CRM.Persistence.Data;
-using CRM.Persistence.Repositories;
-using CRM.Application.Interfaces;
+using PKT.Persistence.Data;
+using PKT.Persistence.Repositories;
+using PKT.Application.Interfaces;
+using PKT.Persistence.Services;
 
-namespace CRM.Persistence;
+namespace PKT.Persistence;
 
 public static class DependencyInjection
 {
@@ -22,6 +23,9 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Services
+        services.AddScoped<IDashboardService, DashboardService>();
 
         return services;
     }

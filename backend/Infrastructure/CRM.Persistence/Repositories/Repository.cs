@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using CRM.Application.Interfaces;
-using CRM.Domain.Entities;
-using CRM.Persistence.Data;
+using PKT.Application.Interfaces;
+using PKT.Domain.Entities;
+using PKT.Persistence.Data;
 
-namespace CRM.Persistence.Repositories;
+namespace PKT.Persistence.Repositories;
 
 public class Repository<T> : IRepository<T> where T : BaseEntity
 {
@@ -19,31 +19,22 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        return await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
     public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .ToListAsync(cancellationToken);
+        return await _dbSet.ToListAsync(cancellationToken);
     }
 
     public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .Where(predicate)
-            .ToListAsync(cancellationToken);
+        return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
     }
 
     public virtual async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .FirstOrDefaultAsync(predicate, cancellationToken);
+        return await _dbSet.FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
     public virtual async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
@@ -81,37 +72,26 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 
     public virtual void Remove(T entity)
     {
-        entity.IsDeleted = true;
-        entity.UpdatedAt = DateTime.UtcNow;
-        _dbSet.Update(entity);
+        _dbSet.Remove(entity);
     }
 
     public virtual void RemoveRange(IEnumerable<T> entities)
     {
-        foreach (var entity in entities)
-        {
-            entity.IsDeleted = true;
-            entity.UpdatedAt = DateTime.UtcNow;
-        }
-        _dbSet.UpdateRange(entities);
+        _dbSet.RemoveRange(entities);
     }
 
     public virtual async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.Where(e => !e.IsDeleted);
-        
         if (predicate != null)
         {
-            query = query.Where(predicate);
+            return await _dbSet.Where(predicate).CountAsync(cancellationToken);
         }
         
-        return await query.CountAsync(cancellationToken);
+        return await _dbSet.CountAsync(cancellationToken);
     }
 
     public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .AnyAsync(predicate, cancellationToken);
+        return await _dbSet.AnyAsync(predicate, cancellationToken);
     }
 }
