@@ -53,6 +53,12 @@ public class DelayReasonsController : BaseController
     [HttpPost]
     public async Task<ActionResult<ApiResponse<DelayReasonDto>>> Create(CreateDelayReasonDto createDto)
     {
+        // Foreman ekleme yapamaz
+        if (IsForeman())
+        {
+            return ForbiddenResponse<DelayReasonDto>();
+        }
+
         var delayReason = new DelayReason
         {
             Name = createDto.Name
@@ -75,6 +81,12 @@ public class DelayReasonsController : BaseController
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<DelayReasonDto>>> Update(Guid id, UpdateDelayReasonDto updateDto)
     {
+        // Foreman düzenleme yapamaz
+        if (IsForeman())
+        {
+            return ForbiddenResponse<DelayReasonDto>();
+        }
+
         var delayReason = await _repository.GetByIdAsync(id);
         if (delayReason == null)
             return NotFound(ApiResponse<DelayReasonDto>.ErrorResponse("Delay reason not found"));

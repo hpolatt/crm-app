@@ -2,11 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using PktApp.Infrastructure;
-using PktApp.Domain.Enums;
-using Npgsql;
-
-// Register PostgreSQL enum mapping
-NpgsqlConnection.GlobalTypeMapper.MapEnum<TransactionStatus>();
+using PktApp.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,8 +17,12 @@ builder.Host.UseSerilog();
 // Add Infrastructure layer (DbContext, Repositories, UnitOfWork)
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Add Controllers
-builder.Services.AddControllers();
+// Add Controllers with JSON options to serialize enums as strings
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -51,6 +51,9 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline
 app.UseSerilogRequestLogging();
+
+// Add Role Middleware to extract user role from headers/token
+app.UseMiddleware<RoleMiddleware>();
 
 // IMPORTANT: CORS must come before routing/controllers
 app.UseCors("AllowAll");

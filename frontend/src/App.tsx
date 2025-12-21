@@ -4,6 +4,7 @@ import DelayReasons from './pages/DelayReasons'
 import Reactors from './pages/Reactors'
 import Products from './pages/Products'
 import PktTransactions from './pages/PktTransactions'
+import Users from './pages/Users'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 
@@ -23,6 +24,7 @@ function App() {
         <Route path="reactors" element={<Reactors />} />
         <Route path="products" element={<Products />} />
         <Route path="transactions" element={<PktTransactions />} />
+        <Route path="users" element={<Users />} />
       </Route>
     </Routes>
   )

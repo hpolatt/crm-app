@@ -159,12 +159,15 @@ public class PktTransactionsController : BaseController
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<PktTransactionDto>>> Update(Guid id, UpdatePktTransactionDto updateDto)
     {
-        // TODO: Admin kontrolü eklenecek - şimdilik mock
-        // if (!User.IsInRole("Admin")) return Forbid();
-        
         var transaction = await _repository.GetByIdAsync(id);
         if (transaction == null)
             return NotFound(ApiResponse<PktTransactionDto>.ErrorResponse("Transaction not found"));
+
+        // Foreman başlamış transactionları düzenleyemez
+        if (IsForeman() && transaction.StartOfWork.HasValue)
+        {
+            return ForbiddenResponse<PktTransactionDto>("Başlamış işlemleri düzenleme yetkiniz yok");
+        }
 
         transaction.Status = updateDto.Status;
         transaction.ReactorId = updateDto.ReactorId;
@@ -221,6 +224,12 @@ public class PktTransactionsController : BaseController
         if (transaction == null)
             return NotFound(ApiResponse<bool>.ErrorResponse("Transaction not found"));
 
+        // Foreman başlamış transactionları silemez
+        if (IsForeman() && transaction.StartOfWork.HasValue)
+        {
+            return ForbiddenResponse<bool>("Başlamış işlemleri silme yetkiniz yok");
+        }
+
         _repository.Remove(transaction);
         await _unitOfWork.CommitAsync();
 
@@ -245,8 +254,8 @@ public class PktTransactionsController : BaseController
             transaction.StartOfWork = DateTime.UtcNow;
         }
 
-        // Completed'a geçerken End zamanını ayarla
-        if (statusUpdate.NewStatus == Domain.Enums.TransactionStatus.Completed && !transaction.End.HasValue)
+        // ProductionCompleted'a geçerken End zamanını ayarla
+        if (statusUpdate.NewStatus == Domain.Enums.TransactionStatus.ProductionCompleted && !transaction.End.HasValue)
         {
             transaction.End = DateTime.UtcNow;
             if (transaction.StartOfWork.HasValue)
@@ -255,10 +264,24 @@ public class PktTransactionsController : BaseController
             }
         }
 
-        // Washing'e geçerken washing başlangıç zamanını kaydet (Description'a ekleyelim)
+        // Washing'e geçerken washing başlangıç zamanını kaydet
         if (statusUpdate.NewStatus == Domain.Enums.TransactionStatus.Washing)
         {
-            // Washing başlangıç zamanı
+            // Washing başlangıç zamanı - ProductionCompleted'dan geliyor
+            if (!transaction.End.HasValue)
+            {
+                transaction.End = DateTime.UtcNow;
+                if (transaction.StartOfWork.HasValue)
+                {
+                    transaction.ActualProductionDuration = transaction.End.Value - transaction.StartOfWork.Value;
+                }
+            }
+        }
+
+        // Completed'a geçerken (washing olmadan direkt veya washing sonrası)
+        if (statusUpdate.NewStatus == Domain.Enums.TransactionStatus.Completed)
+        {
+            // End zaten ProductionCompleted'da set edildi
         }
 
         // WashingCompleted'a geçerken washing süresini hesapla

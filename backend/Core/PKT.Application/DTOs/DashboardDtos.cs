@@ -5,7 +5,7 @@ namespace PKT.Application.DTOs.Dashboard
         public int TotalProductionCount { get; set; }
         public int ActiveProductionCount { get; set; }
         public int CompletedProductionCount { get; set; }
-        public double AverageProductionDurationHours { get; set; }
+        public double AverageProductionDurationMinutes { get; set; }
         public double TotalDelayDurationHours { get; set; }
     }
 
@@ -14,7 +14,7 @@ namespace PKT.Application.DTOs.Dashboard
         public string ReactorId { get; set; } = string.Empty;
         public string ReactorName { get; set; } = string.Empty;
         public int ProductionCount { get; set; }
-        public double AverageProductionDurationHours { get; set; }
+        public double AverageProductionDurationMinutes { get; set; }
     }
 
     public class ProductAnalyticsDto
@@ -23,9 +23,9 @@ namespace PKT.Application.DTOs.Dashboard
         public string ProductName { get; set; } = string.Empty;
         public string ProductCode { get; set; } = string.Empty;
         public int ProductionCount { get; set; }
-        public int PlannedDurationHours { get; set; }
-        public double ActualAverageDurationHours { get; set; }
-        public double VarianceHours { get; set; }
+        public int PlannedDurationMinutes { get; set; }
+        public double ActualAverageDurationMinutes { get; set; }
+        public double VarianceMinutes { get; set; }
     }
 
     public class DelayAnalyticsDto

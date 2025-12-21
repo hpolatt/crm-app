@@ -17,6 +17,20 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Add user role to headers for backend authorization
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        if (user.role) {
+          config.headers['X-User-Role'] = user.role
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    
     return config
   },
   (error) => {
@@ -29,7 +43,11 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
+      localStorage.removeItem('user')
       window.location.href = '/login'
+    } else if (error.response?.status === 403) {
+      // Show forbidden message but don't redirect
+      console.error('Forbidden: You do not have permission to perform this action')
     }
     return Promise.reject(error)
   }

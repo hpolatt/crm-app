@@ -9,6 +9,7 @@ ENV POSTGRES_PASSWORD=PktDb@2024
 COPY 01_init_database.sql /docker-entrypoint-initdb.d/
 COPY 02_create_tables.sql /docker-entrypoint-initdb.d/
 COPY 03_create_indexes.sql /docker-entrypoint-initdb.d/
+COPY 05_seed_data.sql /docker-entrypoint-initdb.d/
 
 # Expose PostgreSQL port
 EXPOSE 5432

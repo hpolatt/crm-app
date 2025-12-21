@@ -28,7 +28,7 @@ interface Product {
   productName: string;
   minProductionQuantity: number;
   maxProductionQuantity: number;
-  productionDurationHours: number;
+  productionDurationMinutes: number;
   notes?: string;
   createdAt: string;
   updatedAt?: string;
@@ -40,7 +40,7 @@ const initialFormData = {
   productName: '',
   minProductionQuantity: 0,
   maxProductionQuantity: 0,
-  productionDurationHours: 0,
+  productionDurationMinutes: 0,
   notes: '',
 };
 
@@ -72,7 +72,7 @@ export default function Products() {
         productName: product.productName,
         minProductionQuantity: product.minProductionQuantity,
         maxProductionQuantity: product.maxProductionQuantity,
-        productionDurationHours: product.productionDurationHours,
+        productionDurationMinutes: product.productionDurationMinutes,
         notes: product.notes || '',
       });
     } else {
@@ -131,7 +131,7 @@ export default function Products() {
               <TableCell>Ürün Adı</TableCell>
               <TableCell align="right">Min Miktar</TableCell>
               <TableCell align="right">Max Miktar</TableCell>
-              <TableCell align="right">Üretim Süresi (Saat)</TableCell>
+              <TableCell align="right">Üretim Süresi (Dakika)</TableCell>
               <TableCell align="right">İşlemler</TableCell>
             </TableRow>
           </TableHead>
@@ -143,7 +143,7 @@ export default function Products() {
                 <TableCell>{product.productName}</TableCell>
                 <TableCell align="right">{product.minProductionQuantity}</TableCell>
                 <TableCell align="right">{product.maxProductionQuantity}</TableCell>
-                <TableCell align="right">{product.productionDurationHours}</TableCell>
+                <TableCell align="right">{product.productionDurationMinutes}</TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => handleOpen(product)} color="primary">
                     <Edit />
@@ -206,11 +206,11 @@ export default function Products() {
             </Grid>
             <Grid item xs={12} sm={4}>
               <TextField
-                label="Üretim Süresi (Saat)"
+                label="Üretim Süresi (Dakika)"
                 type="number"
                 fullWidth
-                value={formData.productionDurationHours}
-                onChange={(e) => setFormData({ ...formData, productionDurationHours: Number(e.target.value) })}
+                value={formData.productionDurationMinutes}
+                onChange={(e) => setFormData({ ...formData, productionDurationMinutes: Number(e.target.value) })}
               />
             </Grid>
             <Grid item xs={12}>

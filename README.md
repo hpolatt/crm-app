@@ -468,3 +468,7 @@ Pull request'ler memnuniyetle karşılanır. Büyük değişiklikler için lütf
 ## İletişim
 
 Sorularınız için lütfen issue açın.
+
+
+docker save -o pkt-app-images.tar pkt-app-backend:latest pkt-app-frontend:latest pkt-app-database:latest
+docker load -i pkt-app-images.tar

@@ -21,6 +21,7 @@ import {
   Chip,
   LinearProgress,
   Alert,
+  Autocomplete,
 } from '@mui/material';
 import { Add, Edit, Delete, Visibility, Warning } from '@mui/icons-material';
 import { api } from '../services/api';
@@ -54,7 +55,7 @@ interface Reactor {
 interface Product {
   id: string;
   productName: string;
-  productionDurationHours?: number;
+  productionDurationMinutes?: number;
 }
 
 interface DelayReason {
@@ -75,7 +76,7 @@ const initialFormData = {
   description: '',
 };
 
-const statusOptions = ['Planned', 'InProgress', 'Completed', 'Washing', 'WashingCompleted', 'Cancelled'];
+const statusOptions = ['Planned', 'InProgress', 'ProductionCompleted', 'Washing', 'WashingCompleted', 'Completed', 'Cancelled'];
 
 export default function PktTransactions() {
   const [transactions, setTransactions] = useState<PktTransaction[]>([]);
@@ -90,6 +91,39 @@ export default function PktTransactions() {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [delayReasonRequired, setDelayReasonRequired] = useState(false);
+  const [selectedDelayReason, setSelectedDelayReason] = useState<string>('');
+
+  const getUserRole = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.role;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const isForeman = () => getUserRole() === 'Foreman';
+
+  const canEdit = (transaction: PktTransaction) => {
+    // Foreman başlamış transactionları düzenleyemez
+    if (isForeman() && transaction.startOfWork) {
+      return false;
+    }
+    return true;
+  };
+
+  const canDelete = (transaction: PktTransaction) => {
+    // Foreman başlamış transactionları silemez
+    if (isForeman() && transaction.startOfWork) {
+      return false;
+    }
+    return true;
+  };
 
   useEffect(() => {
     fetchTransactions();
@@ -98,10 +132,29 @@ export default function PktTransactions() {
     fetchDelayReasons();
   }, []);
 
+  // Auto-refresh detail dialog every 20 seconds
+  useEffect(() => {
+    if (!detailOpen || !selectedTransaction) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.get(`/pkttransactions/${selectedTransaction.id}`);
+        setSelectedTransaction(response.data.data);
+      } catch (error) {
+        console.error('Error refreshing transaction:', error);
+      }
+    }, 20000); // 20 seconds
+
+    return () => clearInterval(interval);
+  }, [detailOpen, selectedTransaction?.id]);
+
   const fetchTransactions = async () => {
     try {
       const response = await api.get('/pkttransactions');
-      setTransactions(response.data.data || []);
+      // Filter out Completed transactions from main list
+      const allTransactions = response.data.data || [];
+      const activeTransactions = allTransactions.filter((t: PktTransaction) => t.status !== 'Completed');
+      setTransactions(activeTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }
@@ -212,9 +265,10 @@ export default function PktTransactions() {
   const getNextStatus = (currentStatus: string): string | null => {
     const statusMap: Record<string, string> = {
       'Planned': 'InProgress',
-      'InProgress': 'Completed',
-      'Completed': 'Washing',
+      'InProgress': 'ProductionCompleted',
+      'ProductionCompleted': 'Washing', // Yıkama Başlat butonu için
       'Washing': 'WashingCompleted',
+      'WashingCompleted': 'Completed',
     };
     return statusMap[currentStatus] || null;
   };
@@ -222,9 +276,10 @@ export default function PktTransactions() {
   const getStatusButtonText = (status: string): string => {
     const buttonTextMap: Record<string, string> = {
       'Planned': 'Başla',
-      'InProgress': 'Bitir',
-      'Completed': 'Yıkama Başlat',
+      'InProgress': 'Üretimi Bitir',
+      'ProductionCompleted': 'Yıkama Başlat',
       'Washing': 'Yıkama Bitir',
+      'WashingCompleted': 'Tamamla',
     };
     return buttonTextMap[status] || '';
   };
@@ -252,65 +307,98 @@ export default function PktTransactions() {
     const nextStatus = getNextStatus(selectedTransaction.status);
     if (!nextStatus) return;
 
-    // Bitir butonuna basıldığında ve süre aşıldıysa not iste
-    if (selectedTransaction.status === 'InProgress' && nextStatus === 'Completed') {
+    // Üretimi Bitir butonuna basıldığında - not dialog'u aç (zorunlu değil ama gecikme varsa gecikme nedeni zorunlu)
+    if (selectedTransaction.status === 'InProgress' && nextStatus === 'ProductionCompleted') {
       const product = products.find(p => p.id === selectedTransaction.productId);
       if (product && selectedTransaction.startOfWork) {
         const startTime = new Date(selectedTransaction.startOfWork).getTime();
         const currentTime = new Date().getTime();
-        const elapsedHours = (currentTime - startTime) / (1000 * 60 * 60);
-        const expectedHours = (product as any).productionDurationHours || 0;
+        const elapsedMinutes = (currentTime - startTime) / (1000 * 60);
+        const expectedMinutes = (product as any).productionDurationMinutes || 0;
 
-        if (elapsedHours > expectedHours) {
-          // Not iste
-          setPendingStatus(nextStatus);
-          setNoteDialogOpen(true);
-          return;
-        }
+        // Süre aşıldıysa gecikme nedeni zorunlu
+        setDelayReasonRequired(elapsedMinutes > expectedMinutes);
+      } else {
+        setDelayReasonRequired(false);
       }
+      
+      setPendingStatus(nextStatus);
+      setNoteDialogOpen(true);
+      return;
     }
 
     await handleStatusUpdate(nextStatus);
   };
 
+  const handleCompleteWithoutWashing = async () => {
+    if (!selectedTransaction || selectedTransaction.status !== 'ProductionCompleted') return;
+    
+    // Yıkama yapmadan direkt Completed'a geç
+    await handleStatusUpdate('Completed');
+  };
+
   const handleNoteSubmit = async () => {
     if (pendingStatus) {
+      // Gecikme nedeni zorunluysa ve seçilmemişse hata ver
+      if (delayReasonRequired && !selectedDelayReason) {
+        alert('Üretim beklenen süreyi aştı. Lütfen gecikme nedeni seçin.');
+        return;
+      }
+
+      // Update transaction with delay reason if selected
+      if (selectedDelayReason) {
+        try {
+          await api.put(`/pkttransactions/${selectedTransaction?.id}`, {
+            ...selectedTransaction,
+            delayReasonId: selectedDelayReason,
+            description: noteText || selectedTransaction?.description,
+          });
+        } catch (error) {
+          console.error('Error updating delay reason:', error);
+        }
+      }
+
       await handleStatusUpdate(pendingStatus, noteText);
       setNoteDialogOpen(false);
       setNoteText('');
+      setSelectedDelayReason('');
+      setDelayReasonRequired(false);
       setPendingStatus(null);
     }
   };
 
   const calculateProgress = (transaction: PktTransaction) => {
-    if (!transaction.startOfWork || transaction.status === 'Planned' || transaction.status === 'Washing') {
-      return { percentage: 0, color: 'grey', showWarning: false };
+    if (!transaction.startOfWork || transaction.status === 'Planned' || transaction.status === 'Washing' || transaction.status === 'WashingCompleted' || transaction.status === 'Completed') {
+      return { percentage: 0, color: 'grey', showWarning: false, elapsedMinutes: 0, expectedMinutes: 0 };
     }
 
     const product = products.find(p => p.id === transaction.productId);
-    if (!product) return { percentage: 0, color: 'grey', showWarning: false };
+    if (!product) return { percentage: 0, color: 'grey', showWarning: false, elapsedMinutes: 0, expectedMinutes: 0 };
 
-    const expectedHours = (product as any).productionDurationHours || 0;
-    if (expectedHours === 0) return { percentage: 0, color: 'grey', showWarning: false };
+    const expectedMinutes = (product as any).productionDurationMinutes || 0;
+    if (expectedMinutes === 0) return { percentage: 0, color: 'grey', showWarning: false, elapsedMinutes: 0, expectedMinutes: 0 };
 
     const startTime = new Date(transaction.startOfWork).getTime();
-    const currentTime = transaction.end ? new Date(transaction.end).getTime() : new Date().getTime();
-    const elapsedHours = (currentTime - startTime) / (1000 * 60 * 60);
+    // For InProgress: use current time, for ProductionCompleted: use end time
+    const currentTime = (transaction.status === 'ProductionCompleted' && transaction.end) 
+      ? new Date(transaction.end).getTime() 
+      : new Date().getTime();
+    const elapsedMinutes = (currentTime - startTime) / (1000 * 60);
 
-    const percentage = Math.min((elapsedHours / expectedHours) * 100, 100);
-    const threshold110 = expectedHours * 1.1;
+    const percentage = Math.min((elapsedMinutes / expectedMinutes) * 100, 100);
+    const threshold110 = expectedMinutes * 1.1;
 
     let color = 'success';
     let showWarning = false;
 
-    if (elapsedHours > threshold110) {
+    if (elapsedMinutes > threshold110) {
       color = 'error';
       showWarning = true;
-    } else if (elapsedHours > expectedHours) {
+    } else if (elapsedMinutes > expectedMinutes) {
       color = 'warning';
     }
 
-    return { percentage, color, showWarning, elapsedHours, expectedHours };
+    return { percentage, color, showWarning, elapsedMinutes, expectedMinutes };
   };
 
   const getStatusColor = (status: string) => {
@@ -371,12 +459,16 @@ export default function PktTransactions() {
                   <IconButton onClick={() => handleViewDetail(transaction)} color="info">
                     <Visibility />
                   </IconButton>
-                  <IconButton onClick={() => handleOpen(transaction)} color="primary">
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(transaction.id)} color="error">
-                    <Delete />
-                  </IconButton>
+                  {canEdit(transaction) && (
+                    <IconButton onClick={() => handleOpen(transaction)} color="primary">
+                      <Edit />
+                    </IconButton>
+                  )}
+                  {canDelete(transaction) && (
+                    <IconButton onClick={() => handleDelete(transaction.id)} color="error">
+                      <Delete />
+                    </IconButton>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -408,36 +500,38 @@ export default function PktTransactions() {
               </Grid>
             )}
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                label="Reaktör"
+              <Autocomplete
+                options={reactors}
+                getOptionLabel={(option) => option.name}
+                value={reactors.find(r => r.id === formData.reactorId) || null}
+                onChange={(_, newValue) => setFormData({ ...formData, reactorId: newValue?.id || '' })}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Reaktör"
+                    required
+                    placeholder="Reaktör ara..."
+                  />
+                )}
                 fullWidth
-                required
-                value={formData.reactorId}
-                onChange={(e) => setFormData({ ...formData, reactorId: e.target.value })}
-              >
-                {reactors.map((reactor) => (
-                  <MenuItem key={reactor.id} value={reactor.id}>
-                    {reactor.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                label="Ürün"
+              <Autocomplete
+                options={products}
+                getOptionLabel={(option) => `${option.productCode} - ${option.productName}`}
+                value={products.find(p => p.id === formData.productId) || null}
+                onChange={(_, newValue) => setFormData({ ...formData, productId: newValue?.id || '' })}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Ürün"
+                    required
+                    placeholder="Ürün kodu veya adı ara..."
+                  />
+                )}
                 fullWidth
-                required
-                value={formData.productId}
-                onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-              >
-                {products.map((product) => (
-                  <MenuItem key={product.id} value={product.id}>
-                    {product.productName}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -559,7 +653,7 @@ export default function PktTransactions() {
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="h6" color={progress.color === 'error' ? 'error' : progress.color === 'warning' ? 'warning.main' : 'success.main'}>
-                              {progress.elapsedHours?.toFixed(1) || 0}h / {progress.expectedHours || 0}h
+                              {Math.round(progress.elapsedMinutes ?? 0)} dk / {progress.expectedMinutes ?? 0} dk
                             </Typography>
                             {progress.showWarning && <Warning color="error" fontSize="large" />}
                           </Box>
@@ -572,10 +666,10 @@ export default function PktTransactions() {
                         />
                         <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="caption" color="text.secondary">
-                            0h
+                            0 dk
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {progress.expectedHours}h (Hedef)
+                            {progress.expectedMinutes ?? 0} dk (Hedef)
                           </Typography>
                         </Box>
                       </>
@@ -596,18 +690,34 @@ export default function PktTransactions() {
                 </Alert>
               )}
 
-              {/* Status Update Button */}
-              {getNextStatus(selectedTransaction.status) && (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  sx={{ mb: 3, py: 2, fontSize: '1.1rem' }}
-                  onClick={handleStatusButtonClick}
-                >
-                  {getStatusButtonText(selectedTransaction.status)}
-                </Button>
-              )}
+              {/* Status Update Buttons */}
+              <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+                {getNextStatus(selectedTransaction.status) && (
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    sx={{ py: 2, fontSize: '1.1rem' }}
+                    onClick={handleStatusButtonClick}
+                  >
+                    {getStatusButtonText(selectedTransaction.status)}
+                  </Button>
+                )}
+
+                {/* Complete Without Washing Button */}
+                {selectedTransaction.status === 'ProductionCompleted' && (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    size="large"
+                    color="success"
+                    sx={{ py: 2, fontSize: '1.1rem' }}
+                    onClick={handleCompleteWithoutWashing}
+                  >
+                    Yıkama Olmadan Tamamla
+                  </Button>
+                )}
+              </Box>
 
               <Paper elevation={2} sx={{ p: 3 }}>
                 <Grid container spacing={3}>
@@ -687,25 +797,57 @@ export default function PktTransactions() {
 
       {/* Note Dialog */}
       <Dialog open={noteDialogOpen} onClose={() => setNoteDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Gecikme Notu</DialogTitle>
+        <DialogTitle>Üretim Tamamlama</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Üretim beklenen süreyi aştı. Lütfen bir açıklama girin.
-          </Alert>
+          {delayReasonRequired && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Üretim beklenen süreyi aştı. Lütfen gecikme nedeni seçin.
+            </Alert>
+          )}
+          
+          {delayReasonRequired && (
+            <TextField
+              select
+              fullWidth
+              label="Gecikme Nedeni *"
+              value={selectedDelayReason}
+              onChange={(e) => setSelectedDelayReason(e.target.value)}
+              sx={{ mb: 2, mt: 1 }}
+              required
+            >
+              <MenuItem value="">Seçiniz</MenuItem>
+              {delayReasons.map((reason) => (
+                <MenuItem key={reason.id} value={reason.id}>
+                  {reason.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
           <TextField
             fullWidth
             multiline
             rows={4}
-            label="Açıklama"
+            label="Not (Opsiyonel)"
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setNoteDialogOpen(false)}>İptal</Button>
-          <Button onClick={handleNoteSubmit} variant="contained" disabled={!noteText.trim()}>
-            Kaydet ve Bitir
+          <Button onClick={() => {
+            setNoteDialogOpen(false);
+            setNoteText('');
+            setSelectedDelayReason('');
+            setDelayReasonRequired(false);
+            setPendingStatus(null);
+          }}>İptal</Button>
+          <Button 
+            onClick={handleNoteSubmit} 
+            variant="contained"
+            disabled={delayReasonRequired && !selectedDelayReason}
+          >
+            Üretimi Bitir
           </Button>
         </DialogActions>
       </Dialog>

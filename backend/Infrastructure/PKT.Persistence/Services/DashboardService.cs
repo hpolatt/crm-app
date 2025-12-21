@@ -23,7 +23,7 @@ namespace PKT.Persistence.Services
                 TotalProductionCount = transactions.Count,
                 ActiveProductionCount = transactions.Count(t => t.Status == "Devam Ediyor"),
                 CompletedProductionCount = transactions.Count(t => t.Status == "Tamamlandı"),
-                AverageProductionDurationHours = transactions
+                AverageProductionDurationMinutes = transactions
                     .Where(t => t.ActualProductionDuration.HasValue)
                     .Select(t => t.ActualProductionDuration!.Value.TotalHours)
                     .DefaultIfEmpty(0)
@@ -46,7 +46,7 @@ namespace PKT.Persistence.Services
                     ReactorId = g.Key.ReactorId.ToString(),
                     ReactorName = g.Key.Name,
                     ProductionCount = g.Count(),
-                    AverageProductionDurationHours = g
+                    AverageProductionDurationMinutes = g
                         .Where(t => t.ActualProductionDuration.HasValue)
                         .Select(t => t.ActualProductionDuration!.Value.TotalHours)
                         .DefaultIfEmpty(0)
@@ -67,7 +67,7 @@ namespace PKT.Persistence.Services
                     t.ProductId, 
                     t.Product.ProductName,
                     t.Product.ProductCode,
-                    t.Product.ProductionDurationHours 
+                    t.Product.ProductionDurationMinutes 
                 })
                 .Select(g => new ProductAnalyticsDto
                 {
@@ -75,8 +75,8 @@ namespace PKT.Persistence.Services
                     ProductName = g.Key.ProductName,
                     ProductCode = g.Key.ProductCode,
                     ProductionCount = g.Count(),
-                    PlannedDurationHours = g.Key.ProductionDurationHours,
-                    ActualAverageDurationHours = g
+                    PlannedDurationMinutes = g.Key.ProductionDurationMinutes,
+                    ActualAverageDurationMinutes = g
                         .Where(t => t.ActualProductionDuration.HasValue)
                         .Select(t => t.ActualProductionDuration!.Value.TotalHours)
                         .DefaultIfEmpty(0)
@@ -89,7 +89,7 @@ namespace PKT.Persistence.Services
             // Calculate variance in memory after fetching
             foreach (var item in analytics)
             {
-                item.VarianceHours = item.ActualAverageDurationHours - item.PlannedDurationHours;
+                item.VarianceMinutes = item.ActualAverageDurationMinutes - item.PlannedDurationMinutes;
             }
 
             return analytics;

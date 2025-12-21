@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Reactor> Reactors { get; set; } = null!;
     public DbSet<Product> Products { get; set; } = null!;
     public DbSet<PktTransaction> PktTransactions { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,9 +71,11 @@ public class ApplicationDbContext : DbContext
             entity.ToTable("PktTransactions");
             entity.HasKey(e => e.Id);
             
-            // PostgreSQL enum mapping - Npgsql handles the enum conversion automatically
+            // Convert enum to string for database storage
             entity.Property(e => e.Status)
-                .HasColumnName("Status");
+                .HasConversion<string>()
+                .HasColumnName("Status")
+                .HasMaxLength(50);
             
             entity.HasOne(e => e.Reactor)
                 .WithMany(r => r.PktTransactions)
@@ -88,6 +91,25 @@ public class ApplicationDbContext : DbContext
                 .WithMany(d => d.PktTransactions)
                 .HasForeignKey(e => e.DelayReasonId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("Users");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Username)
+                .IsRequired()
+                .HasMaxLength(100);
+            
+            entity.HasIndex(e => e.Username)
+                .IsUnique();
+            
+            entity.Property(e => e.Role)
+                .HasConversion<string>()
+                .HasColumnName("Role")
+                .HasMaxLength(50);
         });
 
         // Configure column names to match database PascalCase

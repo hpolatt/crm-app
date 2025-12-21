@@ -4,11 +4,25 @@
 -- This script creates all tables for the PKT application
 -- =====================================================
 
--- Create TransactionStatus enum type
-DO $$ BEGIN
-    DROP TYPE IF EXISTS "TransactionStatus" CASCADE;
-    CREATE TYPE "TransactionStatus" AS ENUM ('Planned', 'InProgress', 'Completed', 'Washing', 'WashingCompleted', 'Cancelled');
-END $$;
+-- Create Users table
+CREATE TABLE "Users" (
+    "Id" uuid NOT NULL DEFAULT gen_random_uuid(),
+    "Username" character varying(100) NOT NULL UNIQUE,
+    "PasswordHash" character varying(255) NOT NULL,
+    "FirstName" character varying(100) NOT NULL,
+    "LastName" character varying(100) NOT NULL,
+    "Email" character varying(255) NOT NULL,
+    "Role" VARCHAR(50) NOT NULL DEFAULT 'Foreman',
+    "IsActive" boolean NOT NULL DEFAULT true,
+    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "UpdatedAt" timestamp with time zone NULL,
+    
+    CONSTRAINT "PK_Users" PRIMARY KEY ("Id")
+);
+
+-- Create index on Username for fast lookup
+CREATE INDEX "IX_Users_Username" ON "Users" ("Username");
+
 
 -- Create DelayReasons table
 CREATE TABLE IF NOT EXISTS "DelayReasons" (
@@ -34,7 +48,7 @@ CREATE TABLE IF NOT EXISTS "Products" (
     "ProductName" character varying(255) NOT NULL,
     "MinProductionQuantity" numeric(18,2) NOT NULL,
     "MaxProductionQuantity" numeric(18,2) NOT NULL,
-    "ProductionDurationHours" integer NOT NULL,
+    "ProductionDurationMinutes" integer NOT NULL,
     "Notes" text NULL,
     "CreatedAt" timestamp with time zone NOT NULL,
     "UpdatedAt" timestamp with time zone NULL
@@ -43,7 +57,7 @@ CREATE TABLE IF NOT EXISTS "Products" (
 -- Create PktTransactions table
 CREATE TABLE IF NOT EXISTS "PktTransactions" (
     "Id" uuid PRIMARY KEY,
-    "Status" "TransactionStatus" NOT NULL DEFAULT 'Planned',
+    "Status" VARCHAR(50) NOT NULL DEFAULT 'Planned',
     "ReactorId" uuid NOT NULL,
     "ProductId" uuid NOT NULL,
     "WorkOrderNo" character varying(100) NOT NULL,

@@ -8,7 +8,7 @@ public class ProductDto
     public string ProductName { get; set; } = string.Empty;
     public decimal MinProductionQuantity { get; set; }
     public decimal MaxProductionQuantity { get; set; }
-    public int ProductionDurationHours { get; set; }
+    public int ProductionDurationMinutes { get; set; }
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -21,7 +21,7 @@ public class CreateProductDto
     public string ProductName { get; set; } = string.Empty;
     public decimal MinProductionQuantity { get; set; }
     public decimal MaxProductionQuantity { get; set; }
-    public int ProductionDurationHours { get; set; }
+    public int ProductionDurationMinutes { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -32,6 +32,6 @@ public class UpdateProductDto
     public string ProductName { get; set; } = string.Empty;
     public decimal MinProductionQuantity { get; set; }
     public decimal MaxProductionQuantity { get; set; }
-    public int ProductionDurationHours { get; set; }
+    public int ProductionDurationMinutes { get; set; }
     public string? Notes { get; set; }
 }

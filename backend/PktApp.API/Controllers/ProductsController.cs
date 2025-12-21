@@ -31,7 +31,7 @@ public class ProductsController : BaseController
             ProductName = p.ProductName,
             MinProductionQuantity = p.MinProductionQuantity,
             MaxProductionQuantity = p.MaxProductionQuantity,
-            ProductionDurationHours = p.ProductionDurationHours,
+            ProductionDurationMinutes = p.ProductionDurationMinutes,
             Notes = p.Notes,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt
@@ -54,7 +54,7 @@ public class ProductsController : BaseController
             ProductName = product.ProductName,
             MinProductionQuantity = product.MinProductionQuantity,
             MaxProductionQuantity = product.MaxProductionQuantity,
-            ProductionDurationHours = product.ProductionDurationHours,
+            ProductionDurationMinutes = product.ProductionDurationMinutes,
             Notes = product.Notes,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt
@@ -65,6 +65,12 @@ public class ProductsController : BaseController
     [HttpPost]
     public async Task<ActionResult<ApiResponse<ProductDto>>> Create(CreateProductDto createDto)
     {
+        // Foreman ekleme yapamaz
+        if (IsForeman())
+        {
+            return ForbiddenResponse<ProductDto>();
+        }
+
         var product = new Product
         {
             SBU = createDto.SBU,
@@ -72,7 +78,7 @@ public class ProductsController : BaseController
             ProductName = createDto.ProductName,
             MinProductionQuantity = createDto.MinProductionQuantity,
             MaxProductionQuantity = createDto.MaxProductionQuantity,
-            ProductionDurationHours = createDto.ProductionDurationHours,
+            ProductionDurationMinutes = createDto.ProductionDurationMinutes,
             Notes = createDto.Notes
         };
 
@@ -87,7 +93,7 @@ public class ProductsController : BaseController
             ProductName = product.ProductName,
             MinProductionQuantity = product.MinProductionQuantity,
             MaxProductionQuantity = product.MaxProductionQuantity,
-            ProductionDurationHours = product.ProductionDurationHours,
+            ProductionDurationMinutes = product.ProductionDurationMinutes,
             Notes = product.Notes,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt
@@ -108,7 +114,7 @@ public class ProductsController : BaseController
         product.ProductName = updateDto.ProductName;
         product.MinProductionQuantity = updateDto.MinProductionQuantity;
         product.MaxProductionQuantity = updateDto.MaxProductionQuantity;
-        product.ProductionDurationHours = updateDto.ProductionDurationHours;
+        product.ProductionDurationMinutes = updateDto.ProductionDurationMinutes;
         product.Notes = updateDto.Notes;
 
         _repository.Update(product);
@@ -122,7 +128,7 @@ public class ProductsController : BaseController
             ProductName = product.ProductName,
             MinProductionQuantity = product.MinProductionQuantity,
             MaxProductionQuantity = product.MaxProductionQuantity,
-            ProductionDurationHours = product.ProductionDurationHours,
+            ProductionDurationMinutes = product.ProductionDurationMinutes,
             Notes = product.Notes,
             CreatedAt = product.CreatedAt,
             UpdatedAt = product.UpdatedAt

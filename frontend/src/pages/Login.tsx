@@ -124,29 +124,11 @@ const Login = () => {
             <Button
               variant="outlined"
               size="small"
-              onClick={() => quickLogin('anonymous', 'anonymous123')}
+              onClick={() => quickLogin('foreman', 'F123!foreman123!')}
             >
-              Anonymous Kullanıcı
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => quickLogin('admin', 'admin123')}
-            >
-              Admin
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => quickLogin('ekinkirmizitoprak', 'ekin123')}
-            >
-              Ekin Kırmızıtoprak
+              Foreman Giriş
             </Button>
           </Stack>
-
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
-            Demo kullanıcıları ile hızlı giriş yapabilirsiniz
-          </Typography>
         </Paper>
       </Box>
     </Container>

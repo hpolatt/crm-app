@@ -51,7 +51,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ProductName).IsRequired().HasMaxLength(255);
             entity.Property(e => e.MinProductionQuantity).HasPrecision(18, 2);
             entity.Property(e => e.MaxProductionQuantity).HasPrecision(18, 2);
-            entity.Property(e => e.ProductionDurationHours).IsRequired();
+            entity.Property(e => e.ProductionDurationMinutes).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
         });
 

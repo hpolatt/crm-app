@@ -7,7 +7,7 @@ public class Product : BaseEntity
     public string ProductName { get; set; } = string.Empty;
     public decimal MinProductionQuantity { get; set; }
     public decimal MaxProductionQuantity { get; set; }
-    public int ProductionDurationHours { get; set; }
+    public int ProductionDurationMinutes { get; set; }
     public string? Notes { get; set; }
     
     // Navigation property

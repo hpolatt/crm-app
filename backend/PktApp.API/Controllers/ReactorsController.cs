@@ -53,6 +53,12 @@ public class ReactorsController : BaseController
     [HttpPost]
     public async Task<ActionResult<ApiResponse<ReactorDto>>> Create(CreateReactorDto createDto)
     {
+        // Foreman ekleme yapamaz
+        if (IsForeman())
+        {
+            return ForbiddenResponse<ReactorDto>();
+        }
+
         var reactor = new Reactor
         {
             Name = createDto.Name
@@ -75,6 +81,12 @@ public class ReactorsController : BaseController
     [HttpPut("{id}")]
     public async Task<ActionResult<ApiResponse<ReactorDto>>> Update(Guid id, UpdateReactorDto updateDto)
     {
+        // Foreman düzenleme yapamaz
+        if (IsForeman())
+        {
+            return ForbiddenResponse<ReactorDto>();
+        }
+
         var reactor = await _repository.GetByIdAsync(id);
         if (reactor == null)
             return NotFound(ApiResponse<ReactorDto>.ErrorResponse("Reactor not found"));

@@ -4,8 +4,9 @@ public enum TransactionStatus
 {
     Planned,
     InProgress,
-    Completed,
+    ProductionCompleted,
     Washing,
     WashingCompleted,
+    Completed,
     Cancelled
 }

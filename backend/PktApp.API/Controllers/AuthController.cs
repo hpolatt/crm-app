@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PktApp.Core.DTOs.Common;
+using PktApp.Core.Interfaces;
+using PktApp.Domain.Entities;
 
 namespace PktApp.API.Controllers;
 
@@ -8,25 +10,53 @@ namespace PktApp.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ILogger<AuthController> _logger;
+    private readonly IRepository<User> _userRepository;
 
-    public AuthController(ILogger<AuthController> logger)
+    public AuthController(ILogger<AuthController> logger, IRepository<User> userRepository)
     {
         _logger = logger;
+        _userRepository = userRepository;
     }
 
     [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        _logger.LogInformation("Login attempt for user: {Username}", request.Email);
+        _logger.LogInformation("Login attempt - Email: '{Email}', Password length: {PasswordLength}", 
+            request.Email ?? "(null)", 
+            request.Password?.Length ?? 0);
 
-        // Simple mock authentication - accepts any credentials
-        // TODO: Implement real authentication
         if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
         {
+            _logger.LogWarning("Login failed - Email or Password is empty");
             return BadRequest(new ApiResponse<object>
             {
                 Success = false,
-                Message = "Email ve şifre gereklidir"
+                Message = "Kullanıcı adı ve şifre gereklidir"
+            });
+        }
+
+        // Find user by username (email field is actually username)
+        var users = await _userRepository.GetAllAsync();
+        var user = users.FirstOrDefault(u => u.Username == request.Email && u.IsActive);
+
+        if (user == null)
+        {
+            return Unauthorized(new ApiResponse<object>
+            {
+                Success = false,
+                Message = "Kullanıcı adı veya şifre hatalı"
+            });
+        }
+
+        // Verify password using BCrypt
+        bool isPasswordValid = BCrypt.Net.BCrypt.Verify("huseyinpolat_" + user.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") + request.Password, user.PasswordHash);
+        
+        if (!isPasswordValid)
+        {
+            return Unauthorized(new ApiResponse<object>
+            {
+                Success = false,
+                Message = "Kullanıcı adı veya şifre hatalı"
             });
         }
 
@@ -39,9 +69,12 @@ public class AuthController : ControllerBase
                 Token = "mock-jwt-token-" + Guid.NewGuid().ToString(),
                 User = new UserInfo
                 {
-                    Id = Guid.NewGuid(),
-                    Email = request.Email,
-                    Name = request.Email.Split('@')[0]
+                    Id = user.Id,
+                    Email = user.Email,
+                    Name = $"{user.FirstName} {user.LastName}",
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Role = user.Role.ToString()
                 }
             }
         };
@@ -77,4 +110,7 @@ public class UserInfo
     public Guid Id { get; set; }
     public string Email { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
 }
