@@ -17,24 +17,6 @@ import {
 import { Assessment } from '@mui/icons-material';
 import { api } from '../services/api';
 
-interface Reactor {
-  id: string;
-  name: string;
-  capacity: number;
-}
-
-interface PktTransaction {
-  id: string;
-  status: string;
-  reactorId: string;
-  startOfWork: string | null;
-  end: string | null;
-  actualProductionDuration: string | null;
-  delayDuration: string | null;
-  washingDuration: string | null;
-  createdAt: string;
-}
-
 interface ReactorAnalysis {
   reactorName: string;
   totalProductionMinutes: number;
@@ -46,25 +28,42 @@ interface ReactorAnalysis {
   difference: number;
 }
 
+// Helper to get local date string (YYYY-MM-DD) for display
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getLastWeek = () => {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
+  const daysToLastMonday = dayOfWeek === 0 ? 6 : dayOfWeek + 6; // Go to last Monday
+  const lastMonday = new Date(today.getTime() - daysToLastMonday * 24 * 60 * 60 * 1000);
+  const lastSunday = new Date(lastMonday.getTime() + 6 * 24 * 60 * 60 * 1000);
+  
+  return {
+    from: getLocalDateString(lastMonday),
+    to: getLocalDateString(lastSunday)
+  };
+};
+
 export default function ReactorReport() {
-  const [reactors, setReactors] = useState<Reactor[]>([]);
+  const lastWeek = getLastWeek();
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<ReactorAnalysis[]>([]);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateFrom, setDateFrom] = useState(lastWeek.from);
+  const [dateTo, setDateTo] = useState(lastWeek.to);
 
   useEffect(() => {
-    fetchReactors();
-  }, []);
-
-  const fetchReactors = async () => {
-    try {
-      const response = await api.get('/reactors');
-      setReactors(response.data.data || []);
-    } catch (error) {
-      console.error('Error fetching reactors:', error);
+    // Clear previous analysis before generating new report
+    setAnalysis([]);
+    if (dateFrom && dateTo) {
+      generateReport();
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFrom, dateTo]);
 
   const parseTimeString = (timeStr: string | null): number => {
     if (!timeStr) return 0;
@@ -93,6 +92,36 @@ export default function ReactorReport() {
     return (hours * 60) + minutes + (seconds / 60);
   };
 
+  const parseTimeSpanToMinutes = (timeSpan: string | null): number => {
+    if (!timeSpan) return 0;
+    
+    // C# TimeSpan format: "hh:mm:ss.fffffff" or "d.hh:mm:ss.fffffff"
+    // Examples: "00:01:40.7464700" or "1.02:30:45.1234567"
+    
+    let workingString = timeSpan;
+    let days = 0;
+    
+    // Check if it has days (format: d.hh:mm:ss)
+    // Days format has a dot before the hours part (between first 1-3 digits and two-digit hours)
+    const daysMatch = workingString.match(/^(\d+)\.(\d{2}:\d{2}:\d{2})/);
+    if (daysMatch) {
+      days = parseInt(daysMatch[1]);
+      workingString = daysMatch[2] + workingString.substring(daysMatch[0].length);
+    }
+    
+    // Now parse hh:mm:ss.fffffff
+    // Remove fractional seconds (everything after the last colon's seconds)
+    const timeParts = workingString.split(':');
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1]);
+    // Handle seconds with fractional part: "40.7464700"
+    const secondsStr = timeParts[2] || '0';
+    const seconds = parseFloat(secondsStr);
+    
+    const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes + (seconds / 60);
+    return totalMinutes;
+  };
+
   const formatMinutes = (totalMinutes: number): string => {
     const days = Math.floor(totalMinutes / (24 * 60));
     const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
@@ -114,37 +143,31 @@ export default function ReactorReport() {
     }
 
     setLoading(true);
+    // Clear previous data immediately
+    setAnalysis([]);
+    
     try {
-      // Fetch all transactions
-      const response = await api.get('/pkttransactions');
-      const allTransactions: PktTransaction[] = response.data.data || [];
+      // Fetch reactor usage analysis from backend with date range filter
+      const response = await api.get('/reactors/usage-analysis', {
+        params: {
+          startDateFrom: dateFrom,
+          startDateTo: dateTo
+        }
+      });
+      
+      const reactorUsageData = response.data.data || [];
 
-      // Filter transactions by date range
+      // Calculate total minutes in date range using local dates
       const fromDate = new Date(dateFrom);
       const toDate = new Date(dateTo);
       toDate.setHours(23, 59, 59, 999);
-
-      const filteredTransactions = allTransactions.filter(t => {
-        const createdDate = new Date(t.createdAt);
-        return createdDate >= fromDate && createdDate <= toDate;
-      });
-
-      // Calculate total minutes in date range
       const totalRangeMinutes = (toDate.getTime() - fromDate.getTime()) / (1000 * 60);
 
-      // Analyze each reactor
-      const analyses: ReactorAnalysis[] = reactors.map(reactor => {
-        const reactorTransactions = filteredTransactions.filter(t => t.reactorId === reactor.id);
-
-        let totalProductionMinutes = 0;
-        let totalWashingMinutes = 0;
-        let totalDelayMinutes = 0;
-
-        reactorTransactions.forEach(t => {
-          totalProductionMinutes += parseTimeString(t.actualProductionDuration);
-          totalWashingMinutes += parseTimeString(t.washingDuration);
-          totalDelayMinutes += parseTimeString(t.delayDuration);
-        });
+      // Convert backend data to analysis format
+      const analyses: ReactorAnalysis[] = reactorUsageData.map((r: any) => {
+        const totalProductionMinutes = parseTimeSpanToMinutes(r.totalProductionDuration);
+        const totalWashingMinutes = parseTimeSpanToMinutes(r.totalWashingDuration);
+        const totalDelayMinutes = parseTimeSpanToMinutes(r.totalDelayDuration);
 
         // Calculate total active time (production + washing)
         const totalActiveMinutes = totalProductionMinutes + totalWashingMinutes;
@@ -162,7 +185,7 @@ export default function ReactorReport() {
         const difference = usagePercentage - idealUsagePercentage;
 
         return {
-          reactorName: reactor.name,
+          reactorName: r.reactorName,
           totalProductionMinutes,
           totalWashingMinutes,
           totalDelayMinutes,
@@ -176,6 +199,7 @@ export default function ReactorReport() {
       setAnalysis(analyses);
     } catch (error) {
       console.error('Error generating report:', error);
+      setAnalysis([]); // Clear on error too
     } finally {
       setLoading(false);
     }
@@ -229,6 +253,9 @@ export default function ReactorReport() {
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               InputLabelProps={{ shrink: true }}
+              inputProps={{
+                placeholder: 'yyyy-mm-dd'
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -239,6 +266,9 @@ export default function ReactorReport() {
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               InputLabelProps={{ shrink: true }}
+              inputProps={{
+                placeholder: 'yyyy-mm-dd'
+              }}
             />
           </Grid>
           <Grid item xs={12} sm={4}>

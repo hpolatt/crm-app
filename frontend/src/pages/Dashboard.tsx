@@ -6,6 +6,9 @@ import {
   Typography,
   Card,
   CardContent,
+  TextField,
+  Button,
+  Paper,
 } from '@mui/material'
 import {
   BarChart,
@@ -24,6 +27,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import ScienceIcon from '@mui/icons-material/Science'
 import InventoryIcon from '@mui/icons-material/Inventory'
 import AssignmentIcon from '@mui/icons-material/Assignment'
+import { Refresh } from '@mui/icons-material'
 import { api } from '../services/api'
 
 interface StatCardProps {
@@ -65,8 +69,31 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
+// Helper to get local date string (YYYY-MM-DD) for display
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 function Dashboard() {
   const [loading, setLoading] = useState(true)
+  
+  // Calculate last week as default
+  const getLastWeek = () => {
+    const today = new Date()
+    const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    return {
+      from: getLocalDateString(lastWeek),
+      to: getLocalDateString(today)
+    }
+  }
+  
+  const lastWeek = getLastWeek()
+  const [dateFrom, setDateFrom] = useState(lastWeek.from)
+  const [dateTo, setDateTo] = useState(lastWeek.to)
+  
   const [stats, setStats] = useState({
     totalTransactions: 0,
     activeReactors: 0,
@@ -85,45 +112,58 @@ function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [summary, reactorAnalytics, statusDist, transactions, reactors] = await Promise.all([
+      
+      const [summary, transactions, reactors] = await Promise.all([
         api.get('/dashboard/summary'),
-        api.get('/dashboard/reactor-analytics'),
-        api.get('/dashboard/status-distribution'),
-        api.get('/pkttransactions'),
+        api.get('/pkttransactions', {
+          params: {
+            startDateFrom: dateFrom,
+            startDateTo: dateTo
+          }
+        }),
         api.get('/reactors'),
       ])
 
+      // All transactions are already filtered by backend
+      const filteredTransactions = transactions.data.data || []
+
+      // Set stats based on filtered transactions
       setStats({
-        totalTransactions: summary.data.data?.totalProductionCount || 0,
-        activeReactors: summary.data.data?.activeProductionCount || 0,
-        totalProducts: summary.data.data?.completedProductionCount || 0,
-        delayReasons: Math.round(summary.data.data?.totalDelayDurationHours || 0),
+        totalTransactions: filteredTransactions.length,
+        activeReactors: new Set(filteredTransactions.map((t: any) => t.reactorId)).size,
+        totalProducts: filteredTransactions.filter((t: any) => t.status === 'Completed').length,
+        delayReasons: filteredTransactions.filter((t: any) => t.delayReasonName).length,
       })
 
-      // Status distribution data
-      const statusData = statusDist.data.data || []
-      setStatusData(
-        statusData.map((item: any) => ({
-          name: item.status,
-          value: item.count,
-        }))
-      )
+      // Status distribution data - use filtered transactions
+      const statusCounts: Record<string, number> = {}
+      filteredTransactions.forEach((t: any) => {
+        statusCounts[t.status] = (statusCounts[t.status] || 0) + 1
+      })
+      
+      const statusArray = Object.entries(statusCounts).map(([status, count]) => ({
+        name: status,
+        value: count,
+      }))
+      
+      setStatusData(statusArray)
 
-      // Reactor analytics data
-      const reactorData = reactorAnalytics.data.data || []
-      setReactorData(
-        reactorData.map((item: any) => ({
-          name: item.reactorName,
-          count: item.productionCount,
-        }))
-      )
-
-      // Process delay reasons data (Pie Chart)
-      const allTransactions = transactions.data.data || []
+      // Reactor analytics data - use filtered transactions
+      const reactorCounts: Record<string, { name: string, count: number }> = {}
+      filteredTransactions.forEach((t: any) => {
+        if (!reactorCounts[t.reactorId]) {
+          reactorCounts[t.reactorId] = { name: t.reactorName, count: 0 }
+        }
+        reactorCounts[t.reactorId].count++
+      })
+      
+      const reactorArray = Object.values(reactorCounts)
+      setReactorData(reactorArray)
+      
       const delayReasonCounts: Record<string, number> = {}
       let totalDelayCount = 0
 
-      allTransactions.forEach((t: any) => {
+      filteredTransactions.forEach((t: any) => {
         if (t.delayReasonName) {
           delayReasonCounts[t.delayReasonName] = (delayReasonCounts[t.delayReasonName] || 0) + 1
           totalDelayCount++
@@ -140,12 +180,16 @@ function Dashboard() {
 
       // Process reactor usage data (Bar Chart - Ideal vs Actual)
       const allReactors = reactors.data.data || []
-      const now = new Date()
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      
+      // Calculate total hours in date range using local dates
+      const fromDate = new Date(dateFrom)
+      const toDate = new Date(dateTo)
+      toDate.setHours(23, 59, 59, 999)
+      const totalRangeHours = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60)
       
       const reactorUsageArray = allReactors.map((reactor: any) => {
-        const reactorTransactions = allTransactions.filter(
-          (t: any) => t.reactorId === reactor.id && new Date(t.createdAt) >= thirtyDaysAgo
+        const reactorTransactions = filteredTransactions.filter(
+          (t: any) => t.reactorId === reactor.id
         )
 
         const parseTimeString = (timeStr: string | null): number => {
@@ -177,9 +221,8 @@ function Dashboard() {
         })
 
         const totalActiveHours = totalProductionHours + totalWashingHours
-        const totalPeriodHours = 30 * 24 // 30 days
-        const actualUsagePercent = (totalActiveHours / totalPeriodHours) * 100
-        const idealUsagePercent = (totalProductionHours / totalPeriodHours) * 100
+        const actualUsagePercent = (totalActiveHours / totalRangeHours) * 100
+        const idealUsagePercent = (totalProductionHours / totalRangeHours) * 100
 
         return {
           name: reactor.name,
@@ -210,6 +253,50 @@ function Dashboard() {
         <Typography variant="h4" component="h1" gutterBottom>
           PKT Dashboard
         </Typography>
+
+        {/* Date Range Filter */}
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Başlangıç Tarihi"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  placeholder: 'yyyy-mm-dd'
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Bitiş Tarihi"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  placeholder: 'yyyy-mm-dd'
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<Refresh />}
+                onClick={loadData}
+                disabled={loading}
+                sx={{ height: '56px' }}
+              >
+                {loading ? 'Yükleniyor...' : 'Yenile'}
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
 
         {/* Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -256,6 +343,9 @@ function Dashboard() {
                 <Typography variant="h6" gutterBottom>
                   Gecikme Nedenleri Dağılımı
                 </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {new Date(dateFrom).toLocaleDateString('tr-TR')} - {new Date(dateTo).toLocaleDateString('tr-TR')}
+                </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -285,8 +375,9 @@ function Dashboard() {
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Reaktör Kullanım Karşılaştırması (Son 30 Gün)
-                </Typography>
-                <ResponsiveContainer width="100%" height={300}>
+                </Typography>                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {new Date(dateFrom).toLocaleDateString('tr-TR')} - {new Date(dateTo).toLocaleDateString('tr-TR')}
+                </Typography>                <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={reactorUsageData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
@@ -307,8 +398,9 @@ function Dashboard() {
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   İşlem Durumları
-                </Typography>
-                <ResponsiveContainer width="100%" height={300}>
+                </Typography>                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {new Date(dateFrom).toLocaleDateString('tr-TR')} - {new Date(dateTo).toLocaleDateString('tr-TR')}
+                </Typography>                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
                       data={statusData}
@@ -337,6 +429,9 @@ function Dashboard() {
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Reaktörlere Göre İşlemler
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {new Date(dateFrom).toLocaleDateString('tr-TR')} - {new Date(dateTo).toLocaleDateString('tr-TR')}
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={reactorData}>

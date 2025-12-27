@@ -55,12 +55,18 @@ interface Product {
   productName: string;
 }
 
+interface DelayReason {
+  id: string;
+  name: string;
+}
+
 const statusOptions = ['Planned', 'InProgress', 'ProductionCompleted', 'Washing', 'WashingCompleted', 'Completed', 'Cancelled'];
 
 export default function Reports() {
   const [transactions, setTransactions] = useState<PktTransaction[]>([]);
   const [reactors, setReactors] = useState<Reactor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [delayReasons, setDelayReasons] = useState<DelayReason[]>([]);
   const [loading, setLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<PktTransaction | null>(null);
@@ -82,16 +88,35 @@ export default function Reports() {
 
   const fetchMetadata = async () => {
     try {
-      const [reactorsRes, productsRes] = await Promise.all([
+      const [reactorsRes, productsRes, delayReasonsRes] = await Promise.all([
         api.get('/reactors'),
         api.get('/products'),
+        api.get('/delayreasons'),
       ]);
 
       setReactors(reactorsRes.data.data || []);
       setProducts(productsRes.data.data || []);
+      setDelayReasons(delayReasonsRes.data.data || []);
     } catch (error) {
       console.error('Error fetching metadata:', error);
     }
+  };
+
+  const getUserRole = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.role;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const isAdmin = () => {
+    return getUserRole() === 'Admin';
   };
 
   const fetchReport = async () => {
@@ -139,8 +164,13 @@ export default function Reports() {
       productId: transaction.productId,
       workOrderNo: transaction.workOrderNo,
       lotNo: transaction.lotNo,
+      startOfWork: transaction.startOfWork,
+      end: transaction.end,
+      actualProductionDuration: transaction.actualProductionDuration,
+      delayDuration: transaction.delayDuration,
+      washingDuration: transaction.washingDuration,
       causticAmountKg: transaction.causticAmountKg || 0,
-      delayReasonId: transaction.delayReasonId || '',
+      delayReasonId: transaction.delayReasonId || null,
       description: transaction.description || '',
     });
     setEditDialogOpen(true);
@@ -162,7 +192,24 @@ export default function Reports() {
     if (!editingTransaction) return;
 
     try {
-      await api.put(`/pkttransactions/${editingTransaction.id}`, editFormData);
+      // Send complete data with all fields to prevent null values
+      const cleanData = {
+        status: editFormData.status,
+        reactorId: editFormData.reactorId,
+        productId: editFormData.productId,
+        workOrderNo: editFormData.workOrderNo,
+        lotNo: editFormData.lotNo,
+        startOfWork: editFormData.startOfWork,
+        end: editFormData.end,
+        actualProductionDuration: editFormData.actualProductionDuration,
+        delayDuration: editFormData.delayDuration,
+        washingDuration: editFormData.washingDuration,
+        causticAmountKg: editFormData.causticAmountKg,
+        delayReasonId: editFormData.delayReasonId || null,
+        description: editFormData.description || null,
+      };
+      
+      await api.put(`/pkttransactions/${editingTransaction.id}`, cleanData);
       setEditDialogOpen(false);
       setEditingTransaction(null);
       fetchReport();
@@ -460,6 +507,29 @@ export default function Reports() {
                 onChange={(e) => setEditFormData({ ...editFormData, causticAmountKg: parseFloat(e.target.value) })}
               />
             </Grid>
+            <Grid item xs={12}>
+              <Autocomplete
+                options={delayReasons}
+                getOptionLabel={(option) => option.name}
+                value={delayReasons.find(d => d.id === editFormData.delayReasonId) || null}
+                onChange={(_, newValue) => setEditFormData({ ...editFormData, delayReasonId: newValue?.id || null })}
+                renderInput={(params) => (
+                  <TextField {...params} label="Gecikme Nedeni" />
+                )}
+              />
+            </Grid>
+            {isAdmin() && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  type="datetime-local"
+                  label="Bitiş Zamanı"
+                  value={editFormData.end ? new Date(editFormData.end).toISOString().slice(0, 16) : ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, end: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            )}
             <Grid item xs={12}>
               <TextField
                 fullWidth

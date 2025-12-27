@@ -45,15 +45,20 @@ public class PktTransactionsController : BaseController
         var query = _repository.GetQueryable();
 
         // Apply filters at database level
+        // For Planned transactions (StartOfWork is NULL), use CreatedAt for date filtering
         if (startDateFrom.HasValue)
         {
-            query = query.Where(t => t.StartOfWork.HasValue && t.StartOfWork.Value >= startDateFrom.Value);
+            query = query.Where(t => 
+                (t.StartOfWork.HasValue && t.StartOfWork.Value >= startDateFrom.Value) ||
+                (!t.StartOfWork.HasValue && t.CreatedAt >= startDateFrom.Value));
         }
 
         if (startDateTo.HasValue)
         {
             var endOfDay = startDateTo.Value.Date.AddDays(1).AddTicks(-1);
-            query = query.Where(t => t.StartOfWork.HasValue && t.StartOfWork.Value <= endOfDay);
+            query = query.Where(t => 
+                (t.StartOfWork.HasValue && t.StartOfWork.Value <= endOfDay) ||
+                (!t.StartOfWork.HasValue && t.CreatedAt <= endOfDay));
         }
 
         if (reactorId.HasValue)

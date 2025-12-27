@@ -356,11 +356,24 @@ export default function PktTransactions() {
       // Update transaction with delay reason if selected
       if (selectedDelayReason) {
         try {
-          await api.put(`/pkttransactions/${selectedTransaction?.id}`, {
-            ...selectedTransaction,
-            delayReasonId: selectedDelayReason,
-            description: noteText || selectedTransaction?.description,
-          });
+          // Prepare clean data without empty strings for Guid fields
+          const updateData = {
+            status: selectedTransaction.status,
+            reactorId: selectedTransaction.reactorId,
+            productId: selectedTransaction.productId,
+            workOrderNo: selectedTransaction.workOrderNo,
+            lotNo: selectedTransaction.lotNo,
+            startOfWork: selectedTransaction.startOfWork,
+            end: selectedTransaction.end,
+            actualProductionDuration: selectedTransaction.actualProductionDuration,
+            delayDuration: selectedTransaction.delayDuration,
+            washingDuration: selectedTransaction.washingDuration,
+            causticAmountKg: selectedTransaction.causticAmountKg,
+            delayReasonId: selectedDelayReason || null,
+            description: noteText || selectedTransaction?.description || null,
+          };
+
+          await api.put(`/pkttransactions/${selectedTransaction?.id}`, updateData);
         } catch (error) {
           console.error('Error updating delay reason:', error);
         }
