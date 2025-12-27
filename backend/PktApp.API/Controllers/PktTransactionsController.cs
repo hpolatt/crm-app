@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using PktApp.Core.DTOs.Common;
 using PktApp.Core.DTOs.PktTransactions;
 using PktApp.Core.Interfaces;
@@ -398,5 +399,214 @@ public class PktTransactionsController : BaseController
         };
 
         return Ok(ApiResponse<PktTransactionDto>.SuccessResponse(dto));
+    }
+
+    [HttpPost("import")]
+    public async Task<ActionResult<ApiResponse<ImportResultDto>>> ImportFromExcel(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(ApiResponse<ImportResultDto>.ErrorResponse("Dosya bulunamadı"));
+
+        if (!file.FileName.EndsWith(".xlsx") && !file.FileName.EndsWith(".xls"))
+            return BadRequest(ApiResponse<ImportResultDto>.ErrorResponse("Sadece Excel dosyaları yüklenebilir (.xlsx veya .xls)"));
+
+        var result = new ImportResultDto();
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+        try
+        {
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            using var package = new ExcelPackage(stream);
+            var worksheet = package.Workbook.Worksheets[0]; // İlk sayfa
+            var rowCount = worksheet.Dimension?.Rows ?? 0;
+
+            if (rowCount <= 1)
+            {
+                return BadRequest(ApiResponse<ImportResultDto>.ErrorResponse("Excel dosyası boş veya sadece başlık satırı içeriyor"));
+            }
+
+            result.TotalRows = rowCount - 1; // Başlık hariç
+
+            // Tüm reaktörleri, ürünleri ve gecikme nedenlerini memory'ye al (performans için)
+            var allReactors = await _reactorRepository.GetAllAsync();
+            var allProducts = await _productRepository.GetAllAsync();
+            var allDelayReasons = await _delayReasonRepository.GetAllAsync();
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                try
+                {
+                    // YENİ Excel kolonları
+                    // 1. REAKTÖR, 2. Ürün/İşlem, 3. İş Emri No, 4. Lot Numarası, 
+                    // 5. Başlangıç Tarih, 6. Başlangıç Saati, 7. Bitiş Tarih, 8. Bitiş Saati,
+                    // 9. Yıkama İçin Geçen Süre, 10. Yıkamada kullanılan kostik miktarı (kg),
+                    // 11. Reaktör Bekleme / Gecikme Nedeni, 12. Açıklama
+                    var reactorName = worksheet.Cells[row, 1].Text?.Trim();
+                    var productName = worksheet.Cells[row, 2].Text?.Trim();
+                    var workOrderNo = worksheet.Cells[row, 3].Text?.Trim();
+                    var lotNo = worksheet.Cells[row, 4].Text?.Trim();
+                    var startDate = worksheet.Cells[row, 5].Text?.Trim();
+                    var startTime = worksheet.Cells[row, 6].Text?.Trim();
+                    var endDate = worksheet.Cells[row, 7].Text?.Trim();
+                    var endTime = worksheet.Cells[row, 8].Text?.Trim();
+                    var washingDuration = worksheet.Cells[row, 9].Text?.Trim();
+                    var causticAmount = worksheet.Cells[row, 10].Text?.Trim();
+                    var delayReasonName = worksheet.Cells[row, 11].Text?.Trim();
+                    var description = worksheet.Cells[row, 12].Text?.Trim();
+
+                    // Validasyon
+                    if (string.IsNullOrEmpty(reactorName))
+                    {
+                        result.Errors.Add($"Satır {row}: Reaktör adı boş olamaz");
+                        result.FailureCount++;
+                        continue;
+                    }
+
+                    if (string.IsNullOrEmpty(productName))
+                    {
+                        result.Errors.Add($"Satır {row}: Ürün/İşlem adı boş olamaz");
+                        result.FailureCount++;
+                        continue;
+                    }
+
+                    // Reactor bul
+                    var reactor = allReactors.FirstOrDefault(r => r.Name.Equals(reactorName, StringComparison.OrdinalIgnoreCase));
+                    if (reactor == null)
+                    {
+                        result.Errors.Add($"Satır {row}: '{reactorName}' isimli reaktör bulunamadı");
+                        result.FailureCount++;
+                        continue;
+                    }
+
+                    // Product bul (ürün adı veya kodu ile)
+                    var product = allProducts.FirstOrDefault(p => 
+                        p.ProductName.Equals(productName, StringComparison.OrdinalIgnoreCase) ||
+                        p.ProductCode.Equals(productName, StringComparison.OrdinalIgnoreCase));
+                    if (product == null)
+                    {
+                        result.Errors.Add($"Satır {row}: '{productName}' ürünü bulunamadı");
+                        result.FailureCount++;
+                        continue;
+                    }
+
+                    // Delay reason bul (opsiyonel)
+                    Guid? delayReasonId = null;
+                    if (!string.IsNullOrEmpty(delayReasonName))
+                    {
+                        var delayReason = allDelayReasons.FirstOrDefault(d => d.Name.Equals(delayReasonName, StringComparison.OrdinalIgnoreCase));
+                        if (delayReason != null)
+                        {
+                            delayReasonId = delayReason.Id;
+                        }
+                        else
+                        {
+                            result.Warnings.Add($"Satır {row}: '{delayReasonName}' isimli gecikme nedeni bulunamadı");
+                        }
+                    }
+
+                    // Tarih parse
+                    DateTime? startOfWork = ParseDateTime(startDate, startTime);
+                    DateTime? end = ParseDateTime(endDate, endTime);
+
+                    // Süreleri hesapla
+                    TimeSpan? actualProductionDuration = null;
+                    if (startOfWork.HasValue && end.HasValue)
+                    {
+                        actualProductionDuration = end.Value - startOfWork.Value;
+                    }
+
+                    // Transaction oluştur
+                    var transaction = new PktTransaction
+                    {
+                        Id = Guid.NewGuid(),
+                        ReactorId = reactor.Id,
+                        ProductId = product.Id,
+                        WorkOrderNo = workOrderNo ?? string.Empty,
+                        LotNo = lotNo ?? string.Empty,
+                        StartOfWork = startOfWork,
+                        End = end,
+                        ActualProductionDuration = actualProductionDuration,
+                        DelayDuration = null, // Gecikme süresi hesaplanmıyor
+                        WashingDuration = ParseTimeSpan(washingDuration),
+                        CausticAmountKg = ParseDecimal(causticAmount),
+                        DelayReasonId = delayReasonId,
+                        Description = description,
+                        Status = Domain.Enums.TransactionStatus.Completed,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    await _repository.AddAsync(transaction);
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.Errors.Add($"Satır {row}: {ex.Message}");
+                    result.FailureCount++;
+                }
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(ApiResponse<ImportResultDto>.SuccessResponse(result));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<ImportResultDto>.ErrorResponse($"Excel işlenirken hata oluştu: {ex.Message}"));
+        }
+    }
+
+    private DateTime? ParseDateTime(string? dateStr, string? timeStr)
+    {
+        if (string.IsNullOrEmpty(dateStr)) return null;
+
+        try
+        {
+            if (DateTime.TryParse(dateStr, out var date))
+            {
+                if (!string.IsNullOrEmpty(timeStr) && TimeSpan.TryParse(timeStr, out var time))
+                {
+                    return date.Date + time;
+                }
+                return date;
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    private TimeSpan? ParseTimeSpan(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return null;
+
+        try
+        {
+            // Saat:dakika formatı (örn: "2:30")
+            if (value.Contains(':'))
+            {
+                if (TimeSpan.TryParse(value, out var ts))
+                    return ts;
+            }
+            // Sadece sayı (saat cinsinden)
+            else if (double.TryParse(value, out var hours))
+            {
+                return TimeSpan.FromHours(hours);
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    private decimal? ParseDecimal(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return null;
+
+        if (decimal.TryParse(value, out var result))
+            return result;
+
+        return null;
     }
 }

@@ -13,6 +13,11 @@ import {
   Button,
   Grid,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
 } from '@mui/material';
 import { Assessment } from '@mui/icons-material';
 import { api } from '../services/api';
@@ -55,6 +60,21 @@ export default function ReactorReport() {
   const [analysis, setAnalysis] = useState<ReactorAnalysis[]>([]);
   const [dateFrom, setDateFrom] = useState(lastWeek.from);
   const [dateTo, setDateTo] = useState(lastWeek.to);
+  const [reactors, setReactors] = useState<any[]>([]);
+  const [selectedReactorIds, setSelectedReactorIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Fetch reactors on mount
+    const fetchReactors = async () => {
+      try {
+        const response = await api.get('/reactors');
+        setReactors(response.data.data || []);
+      } catch (error) {
+        console.error('Error fetching reactors:', error);
+      }
+    };
+    fetchReactors();
+  }, []);
 
   useEffect(() => {
     // Clear previous analysis before generating new report
@@ -63,7 +83,7 @@ export default function ReactorReport() {
       generateReport();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, selectedReactorIds]);
 
   const parseTimeString = (timeStr: string | null): number => {
     if (!timeStr) return 0;
@@ -157,6 +177,11 @@ export default function ReactorReport() {
       
       const reactorUsageData = response.data.data || [];
 
+      // Filter by selected reactors if any selected
+      const filteredData = selectedReactorIds.length > 0
+        ? reactorUsageData.filter((r: any) => selectedReactorIds.includes(r.reactorId))
+        : reactorUsageData;
+
       // Calculate total minutes in date range using local dates
       const fromDate = new Date(dateFrom);
       const toDate = new Date(dateTo);
@@ -164,7 +189,7 @@ export default function ReactorReport() {
       const totalRangeMinutes = (toDate.getTime() - fromDate.getTime()) / (1000 * 60);
 
       // Convert backend data to analysis format
-      const analyses: ReactorAnalysis[] = reactorUsageData.map((r: any) => {
+      const analyses: ReactorAnalysis[] = filteredData.map((r: any) => {
         const totalProductionMinutes = parseTimeSpanToMinutes(r.totalProductionDuration);
         const totalWashingMinutes = parseTimeSpanToMinutes(r.totalWashingDuration);
         const totalDelayMinutes = parseTimeSpanToMinutes(r.totalDelayDuration);
@@ -245,7 +270,7 @@ export default function ReactorReport() {
           Tarih Aralığı
         </Typography>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
               type="date"
@@ -258,7 +283,7 @@ export default function ReactorReport() {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
               type="date"
@@ -271,7 +296,49 @@ export default function ReactorReport() {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
+            <FormControl fullWidth>
+              <InputLabel id="reactor-select-label">Reaktörler</InputLabel>
+              <Select
+                labelId="reactor-select-label"
+                multiple
+                value={selectedReactorIds}
+                label="Reaktörler"
+                onChange={(e) =>
+                  setSelectedReactorIds(
+                    typeof e.target.value === 'string'
+                      ? e.target.value.split(',')
+                      : e.target.value
+                  )
+                }
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.length === 0 ? (
+                      <em>Tüm Reaktörler</em>
+                    ) : (
+                      selected.map((id) => {
+                        const reactor = reactors.find((r) => r.id === id);
+                        return (
+                          <Chip
+                            key={id}
+                            label={reactor?.name || id}
+                            size="small"
+                          />
+                        );
+                      })
+                    )}
+                  </Box>
+                )}
+              >
+                {reactors.map((reactor) => (
+                  <MenuItem key={reactor.id} value={reactor.id}>
+                    {reactor.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={3}>
             <Button
               fullWidth
               variant="contained"

@@ -6,6 +6,7 @@ import Products from './pages/Products'
 import PktTransactions from './pages/PktTransactions'
 import Reports from './pages/Reports'
 import ReactorReport from './pages/ReactorReport'
+import TransactionImport from './pages/TransactionImport'
 import Users from './pages/Users'
 import Login from './pages/Login'
 import Layout from './components/Layout'
@@ -28,6 +29,7 @@ function App() {
         <Route path="transactions" element={<PktTransactions />} />
         <Route path="reports" element={<Reports />} />
         <Route path="reactor-report" element={<ReactorReport />} />
+        <Route path="transaction-import" element={<TransactionImport />} />
         <Route path="users" element={<Users />} />
       </Route>
     </Routes>

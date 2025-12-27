@@ -24,6 +24,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import PeopleIcon from '@mui/icons-material/People'
 import LogoutIcon from '@mui/icons-material/Logout'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 
 const drawerWidth = 240
 
@@ -34,7 +35,8 @@ const menuItems = [
   { text: 'Gecikme Nedenleri', icon: <WarningIcon />, path: '/delayreasons' },
   { text: 'PKT İşlemleri', icon: <AssignmentIcon />, path: '/transactions' },
   { text: 'Raporlar', icon: <AssessmentIcon />, path: '/reports' },
-  { text: 'Reaktör Durumu', icon: <BarChartIcon />, path: '/reactor-report' },
+  { text: 'Reaktör Durumu', icon: <BarChartIcon />, path: '/reactor-report' },  
+  { text: 'Excel İçe Aktar', icon: <CloudUploadIcon />, path: '/transaction-import', adminOnly: true },  
   { text: 'Kullanıcılar', icon: <PeopleIcon />, path: '/users', adminOnly: true },
 ]
 
@@ -86,6 +88,20 @@ function Layout() {
     return null
   }
 
+  const getUsername = () => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        // Email'den @ öncesini al (ekin@pktapp.com -> ekin)
+        return user.email ? user.email.split('@')[0] : null
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+
   const isAdmin = () => {
     return getUserRole() === 'Admin'
   }
@@ -105,6 +121,8 @@ function Layout() {
         {menuItems
           .filter((item) => {
             // Admin sadece admin menülerini görebilir
+            if ((item as any).adminOnly && !isAdmin()) return false
+            // Sadece admin Excel içe aktarı görebilir
             if ((item as any).adminOnly && !isAdmin()) return false
             // Foreman sadece Transactions, Reports ve Reactor Report görebilir
             if (isForeman() && !['/transactions', '/reports', '/reactor-report'].includes(item.path)) return false

@@ -9,6 +9,12 @@ import {
   TextField,
   Button,
   Paper,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Chip,
+  Box as MuiBox,
 } from '@mui/material'
 import {
   BarChart,
@@ -93,6 +99,8 @@ function Dashboard() {
   const lastWeek = getLastWeek()
   const [dateFrom, setDateFrom] = useState(lastWeek.from)
   const [dateTo, setDateTo] = useState(lastWeek.to)
+  const [reactors, setReactors] = useState<any[]>([])
+  const [selectedReactorIds, setSelectedReactorIds] = useState<string[]>([])
   
   const [stats, setStats] = useState({
     totalTransactions: 0,
@@ -107,13 +115,13 @@ function Dashboard() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [dateFrom, dateTo, selectedReactorIds])
 
   const loadData = async () => {
     try {
       setLoading(true)
       
-      const [summary, transactions, reactors] = await Promise.all([
+      const [summary, transactions, reactorsResponse] = await Promise.all([
         api.get('/dashboard/summary'),
         api.get('/pkttransactions', {
           params: {
@@ -124,8 +132,19 @@ function Dashboard() {
         api.get('/reactors'),
       ])
 
-      // All transactions are already filtered by backend
-      const filteredTransactions = transactions.data.data || []
+      // Store reactors for dropdown
+      const allReactors = reactorsResponse.data.data || []
+      setReactors(allReactors)
+
+      // All transactions are already filtered by backend (date)
+      let filteredTransactions = transactions.data.data || []
+
+      // Apply reactor filter if specific reactors selected
+      if (selectedReactorIds.length > 0) {
+        filteredTransactions = filteredTransactions.filter(
+          (t: any) => selectedReactorIds.includes(t.reactorId)
+        )
+      }
 
       // Set stats based on filtered transactions
       setStats({
@@ -179,7 +198,10 @@ function Dashboard() {
       setDelayReasonsData(delayReasonsArray)
 
       // Process reactor usage data (Bar Chart - Ideal vs Actual)
-      const allReactors = reactors.data.data || []
+      // Filter reactors if specific ones selected
+      const reactorsToShow = selectedReactorIds.length === 0
+        ? allReactors 
+        : allReactors.filter((r: any) => selectedReactorIds.includes(r.id))
       
       // Calculate total hours in date range using local dates
       const fromDate = new Date(dateFrom)
@@ -187,7 +209,7 @@ function Dashboard() {
       toDate.setHours(23, 59, 59, 999)
       const totalRangeHours = (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60)
       
-      const reactorUsageArray = allReactors.map((reactor: any) => {
+      const reactorUsageArray = reactorsToShow.map((reactor: any) => {
         const reactorTransactions = filteredTransactions.filter(
           (t: any) => t.reactorId === reactor.id
         )
@@ -257,7 +279,7 @@ function Dashboard() {
         {/* Date Range Filter */}
         <Paper sx={{ p: 3, mb: 3 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 type="date"
@@ -270,7 +292,7 @@ function Dashboard() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
               <TextField
                 fullWidth
                 type="date"
@@ -283,7 +305,43 @@ function Dashboard() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth>
+                <InputLabel id="reactor-select-label">Reaktörler</InputLabel>
+                <Select
+                  labelId="reactor-select-label"
+                  multiple
+                  value={selectedReactorIds}
+                  label="Reaktörler"
+                  onChange={(e) => setSelectedReactorIds(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                  renderValue={(selected) => (
+                    <MuiBox sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.length === 0 ? (
+                        <em>Tüm Reaktörler</em>
+                      ) : (
+                        selected.map((id) => {
+                          const reactor = reactors.find((r) => r.id === id)
+                          return (
+                            <Chip
+                              key={id}
+                              label={reactor?.name || id}
+                              size="small"
+                            />
+                          )
+                        })
+                      )}
+                    </MuiBox>
+                  )}
+                >
+                  {reactors.map((reactor) => (
+                    <MenuItem key={reactor.id} value={reactor.id}>
+                      {reactor.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={3}>
               <Button
                 fullWidth
                 variant="contained"
