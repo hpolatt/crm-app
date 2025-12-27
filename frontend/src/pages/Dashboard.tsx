@@ -75,6 +75,8 @@ function Dashboard() {
   })
   const [statusData, setStatusData] = useState<any[]>([])
   const [reactorData, setReactorData] = useState<any[]>([])
+  const [delayReasonsData, setDelayReasonsData] = useState<any[]>([])
+  const [reactorUsageData, setReactorUsageData] = useState<any[]>([])
 
   useEffect(() => {
     loadData()
@@ -83,10 +85,12 @@ function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [summary, reactorAnalytics, statusDist] = await Promise.all([
+      const [summary, reactorAnalytics, statusDist, transactions, reactors] = await Promise.all([
         api.get('/dashboard/summary'),
         api.get('/dashboard/reactor-analytics'),
         api.get('/dashboard/status-distribution'),
+        api.get('/pkttransactions'),
+        api.get('/reactors'),
       ])
 
       setStats({
@@ -113,6 +117,78 @@ function Dashboard() {
           count: item.productionCount,
         }))
       )
+
+      // Process delay reasons data (Pie Chart)
+      const allTransactions = transactions.data.data || []
+      const delayReasonCounts: Record<string, number> = {}
+      let totalDelayCount = 0
+
+      allTransactions.forEach((t: any) => {
+        if (t.delayReasonName) {
+          delayReasonCounts[t.delayReasonName] = (delayReasonCounts[t.delayReasonName] || 0) + 1
+          totalDelayCount++
+        }
+      })
+
+      const delayReasonsArray = Object.entries(delayReasonCounts).map(([name, count]) => ({
+        name,
+        value: count,
+        percentage: ((count / totalDelayCount) * 100).toFixed(1),
+      }))
+
+      setDelayReasonsData(delayReasonsArray)
+
+      // Process reactor usage data (Bar Chart - Ideal vs Actual)
+      const allReactors = reactors.data.data || []
+      const now = new Date()
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      
+      const reactorUsageArray = allReactors.map((reactor: any) => {
+        const reactorTransactions = allTransactions.filter(
+          (t: any) => t.reactorId === reactor.id && new Date(t.createdAt) >= thirtyDaysAgo
+        )
+
+        const parseTimeString = (timeStr: string | null): number => {
+          if (!timeStr) return 0
+          const parts = timeStr.split('.')
+          let hours = 0
+          let minutes = 0
+
+          if (parts.length === 2) {
+            const days = parseInt(parts[0])
+            const timeParts = parts[1].split(':')
+            hours = parseInt(timeParts[0]) + (days * 24)
+            minutes = parseInt(timeParts[1])
+          } else {
+            const timeParts = timeStr.split(':')
+            hours = parseInt(timeParts[0])
+            minutes = parseInt(timeParts[1])
+          }
+
+          return hours + (minutes / 60)
+        }
+
+        let totalProductionHours = 0
+        let totalWashingHours = 0
+
+        reactorTransactions.forEach((t: any) => {
+          totalProductionHours += parseTimeString(t.actualProductionDuration)
+          totalWashingHours += parseTimeString(t.washingDuration)
+        })
+
+        const totalActiveHours = totalProductionHours + totalWashingHours
+        const totalPeriodHours = 30 * 24 // 30 days
+        const actualUsagePercent = (totalActiveHours / totalPeriodHours) * 100
+        const idealUsagePercent = (totalProductionHours / totalPeriodHours) * 100
+
+        return {
+          name: reactor.name,
+          'Mevcut Kullanım': parseFloat(actualUsagePercent.toFixed(1)),
+          'İdeal Kullanım': parseFloat(idealUsagePercent.toFixed(1)),
+        }
+      })
+
+      setReactorUsageData(reactorUsageArray)
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     } finally {
@@ -173,6 +249,58 @@ function Dashboard() {
 
         {/* Charts */}
         <Grid container spacing={3}>
+          {/* Delay Reasons Distribution */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Gecikme Nedenleri Dağılımı
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={delayReasonsData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage }: any) => `${name} (${percentage}%)`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {delayReasonsData.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Reactor Usage Comparison */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Reaktör Kullanım Karşılaştırması (Son 30 Gün)
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={reactorUsageData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis label={{ value: '%', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="Mevcut Kullanım" fill="#8884d8" />
+                    <Bar dataKey="İdeal Kullanım" fill="#82ca9d" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+
           {/* Transaction Status Distribution */}
           <Grid item xs={12} md={6}>
             <Card>

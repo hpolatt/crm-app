@@ -29,6 +29,11 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
             .ToListAsync(cancellationToken);
     }
 
+    public virtual IQueryable<T> GetQueryable()
+    {
+        return _dbSet.AsQueryable();
+    }
+
     public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
         return await _dbSet

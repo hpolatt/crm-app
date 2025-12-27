@@ -20,6 +20,8 @@ import ScienceIcon from '@mui/icons-material/Science'
 import InventoryIcon from '@mui/icons-material/Inventory'
 import WarningIcon from '@mui/icons-material/Warning'
 import AssignmentIcon from '@mui/icons-material/Assignment'
+import AssessmentIcon from '@mui/icons-material/Assessment'
+import BarChartIcon from '@mui/icons-material/BarChart'
 import PeopleIcon from '@mui/icons-material/People'
 import LogoutIcon from '@mui/icons-material/Logout'
 
@@ -31,6 +33,8 @@ const menuItems = [
   { text: 'Ürünler', icon: <InventoryIcon />, path: '/products' },
   { text: 'Gecikme Nedenleri', icon: <WarningIcon />, path: '/delayreasons' },
   { text: 'PKT İşlemleri', icon: <AssignmentIcon />, path: '/transactions' },
+  { text: 'Raporlar', icon: <AssessmentIcon />, path: '/reports' },
+  { text: 'Reaktör Durumu', icon: <BarChartIcon />, path: '/reactor-report' },
   { text: 'Kullanıcılar', icon: <PeopleIcon />, path: '/users', adminOnly: true },
 ]
 
@@ -39,9 +43,9 @@ function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Foreman kullanıcısını her zaman transactions sayfasına yönlendir
+  // Foreman kullanıcısını izin verilen sayfalara yönlendir
   useEffect(() => {
-    if (isForeman() && location.pathname !== '/transactions') {
+    if (isForeman() && !['/transactions', '/reports', '/reactor-report'].includes(location.pathname)) {
       navigate('/transactions', { replace: true })
     }
   }, [location.pathname])
@@ -102,8 +106,8 @@ function Layout() {
           .filter((item) => {
             // Admin sadece admin menülerini görebilir
             if ((item as any).adminOnly && !isAdmin()) return false
-            // Foreman sadece Transactions görebilir
-            if (isForeman() && item.path !== '/transactions') return false
+            // Foreman sadece Transactions, Reports ve Reactor Report görebilir
+            if (isForeman() && !['/transactions', '/reports', '/reactor-report'].includes(item.path)) return false
             return true
           })
           .map((item) => (

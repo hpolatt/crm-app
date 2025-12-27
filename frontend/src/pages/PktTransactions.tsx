@@ -293,6 +293,14 @@ export default function PktTransactions() {
         note: note || null,
       });
       await fetchTransactions();
+      
+      // Eğer Completed'a geçtiyse dialog'u kapat (listeden filtreleniyor)
+      if (newStatus === 'Completed') {
+        setDetailOpen(false);
+        setSelectedTransaction(null);
+        return;
+      }
+      
       // Refresh selected transaction
       const response = await api.get(`/pkttransactions/${selectedTransaction.id}`);
       setSelectedTransaction(response.data.data);

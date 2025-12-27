@@ -32,9 +32,69 @@ public class PktTransactionsController : BaseController
     }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<IEnumerable<PktTransactionDto>>>> GetAll()
+    public async Task<ActionResult<ApiResponse<IEnumerable<PktTransactionDto>>>> GetAll(
+        [FromQuery] DateTime? startDateFrom = null,
+        [FromQuery] DateTime? startDateTo = null,
+        [FromQuery] Guid? reactorId = null,
+        [FromQuery] Guid? productId = null,
+        [FromQuery] List<string>? statuses = null,
+        [FromQuery] string? workOrderNo = null,
+        [FromQuery] string? lotNo = null)
     {
-        var transactions = await _repository.GetAllAsync();
+        // Start with IQueryable for database-level filtering
+        var query = _repository.GetQueryable();
+
+        // Apply filters at database level
+        if (startDateFrom.HasValue)
+        {
+            query = query.Where(t => t.StartOfWork.HasValue && t.StartOfWork.Value >= startDateFrom.Value);
+        }
+
+        if (startDateTo.HasValue)
+        {
+            var endOfDay = startDateTo.Value.Date.AddDays(1).AddTicks(-1);
+            query = query.Where(t => t.StartOfWork.HasValue && t.StartOfWork.Value <= endOfDay);
+        }
+
+        if (reactorId.HasValue)
+        {
+            query = query.Where(t => t.ReactorId == reactorId.Value);
+        }
+
+        if (productId.HasValue)
+        {
+            query = query.Where(t => t.ProductId == productId.Value);
+        }
+
+        if (statuses != null && statuses.Any())
+        {
+            var statusEnums = new List<Domain.Enums.TransactionStatus>();
+            foreach (var status in statuses)
+            {
+                if (Enum.TryParse<Domain.Enums.TransactionStatus>(status, out var statusEnum))
+                {
+                    statusEnums.Add(statusEnum);
+                }
+            }
+            if (statusEnums.Any())
+            {
+                query = query.Where(t => statusEnums.Contains(t.Status));
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(workOrderNo))
+        {
+            query = query.Where(t => t.WorkOrderNo.Contains(workOrderNo));
+        }
+
+        if (!string.IsNullOrWhiteSpace(lotNo))
+        {
+            query = query.Where(t => t.LotNo.Contains(lotNo));
+        }
+
+        // Execute query and get filtered results from database
+        var transactions = await query.ToListAsync();
+
         var dtos = new List<PktTransactionDto>();
 
         foreach (var t in transactions)
@@ -50,6 +110,7 @@ public class PktTransactionsController : BaseController
                 ReactorId = t.ReactorId,
                 ReactorName = reactor?.Name ?? string.Empty,
                 ProductId = t.ProductId,
+                ProductCode = product?.ProductCode ?? string.Empty,
                 ProductName = product?.ProductName ?? string.Empty,
                 WorkOrderNo = t.WorkOrderNo,
                 LotNo = t.LotNo,

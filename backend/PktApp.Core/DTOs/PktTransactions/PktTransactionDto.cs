@@ -9,6 +9,7 @@ public class PktTransactionDto
     public Guid ReactorId { get; set; }
     public string? ReactorName { get; set; }
     public Guid ProductId { get; set; }
+    public string ProductCode { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public string WorkOrderNo { get; set; } = string.Empty;
     public string LotNo { get; set; } = string.Empty;
