@@ -18,6 +18,9 @@ import {
   Select,
   MenuItem,
   Chip,
+  Checkbox,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import { Assessment } from '@mui/icons-material';
 import { api } from '../services/api';
@@ -62,6 +65,8 @@ export default function ReactorReport() {
   const [dateTo, setDateTo] = useState(lastWeek.to);
   const [reactors, setReactors] = useState<any[]>([]);
   const [selectedReactorIds, setSelectedReactorIds] = useState<string[]>([]);
+  const [tempSelectedReactorIds, setTempSelectedReactorIds] = useState<string[]>([]);
+  const [selectOpen, setSelectOpen] = useState(false);
 
   useEffect(() => {
     // Fetch reactors on mount
@@ -302,21 +307,30 @@ export default function ReactorReport() {
               <Select
                 labelId="reactor-select-label"
                 multiple
-                value={selectedReactorIds}
+                open={selectOpen}
+                onOpen={() => {
+                  setSelectOpen(true);
+                  setTempSelectedReactorIds(selectedReactorIds);
+                }}
+                onClose={(e, reason) => {
+                  if (reason !== 'backdropClick') {
+                    setSelectOpen(false);
+                  }
+                }}
+                value={tempSelectedReactorIds}
                 label="Reaktörler"
-                onChange={(e) =>
-                  setSelectedReactorIds(
-                    typeof e.target.value === 'string'
-                      ? e.target.value.split(',')
-                      : e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  const value = typeof e.target.value === 'string'
+                    ? e.target.value.split(',')
+                    : e.target.value;
+                  setTempSelectedReactorIds(value);
+                }}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.length === 0 ? (
+                    {selectedReactorIds.length === 0 ? (
                       <em>Tüm Reaktörler</em>
                     ) : (
-                      selected.map((id) => {
+                      selectedReactorIds.map((id) => {
                         const reactor = reactors.find((r) => r.id === id);
                         return (
                           <Chip
@@ -329,12 +343,42 @@ export default function ReactorReport() {
                     )}
                   </Box>
                 )}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 400,
+                    },
+                  },
+                  autoFocus: false,
+                }}
               >
+                <Divider />
                 {reactors.map((reactor) => (
                   <MenuItem key={reactor.id} value={reactor.id}>
-                    {reactor.name}
+                    <Checkbox checked={tempSelectedReactorIds.includes(reactor.id)} />
+                    <ListItemText primary={reactor.name} />
                   </MenuItem>
                 ))}
+                <Divider />
+                <MenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedReactorIds(tempSelectedReactorIds);
+                    setSelectOpen(false);
+                  }}
+                  sx={{ 
+                    justifyContent: 'center', 
+                    fontWeight: 'bold',
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    }
+                  }}
+                  disableRipple
+                >
+                  Tamam
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
